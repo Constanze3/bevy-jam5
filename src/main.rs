@@ -24,7 +24,7 @@
 mod plugin;
 
 use avian3d::{math::*, prelude::*};
-use bevy::prelude::*;
+use bevy::{input::mouse::MouseMotion, prelude::*};
 use plugin::*;
 
 fn main() {
@@ -35,6 +35,8 @@ fn main() {
             CharacterControllerPlugin,
         ))
         .add_systems(Startup, setup)
+        .add_systems(Update, camera_control)
+        .insert_resource(MovementSettings::default())
         .run();
 }
 
@@ -42,8 +44,12 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut q_window: Query<&mut Window>,
     assets: Res<AssetServer>,
 ) {
+    // Hide cursor
+    q_window.get_single_mut().unwrap().cursor.visible = false;
+
     // Player
     commands.spawn((
         PbrBundle {
@@ -72,7 +78,7 @@ fn setup(
     commands.spawn((
         SceneBundle {
             scene: assets.load("character_controller_demo.glb#Scene0"),
-            transform: Transform::from_rotation(Quat::from_rotation_y(-std::f32::consts::PI * 0.5)),
+            transform: Transform::default(),
             ..default()
         },
         ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
@@ -92,8 +98,46 @@ fn setup(
     });
 
     // Camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-7.0, 9.5, 15.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    commands.spawn((
+        MainCamera,
+        Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 2.0, 0.0),
+            ..default()
+        },
+    ));
+}
+
+#[derive(Component)]
+struct MainCamera;
+
+#[derive(Resource)]
+struct MovementSettings {
+    sensitivity: f32,
+}
+
+impl Default for MovementSettings {
+    fn default() -> Self {
+        return Self { sensitivity: 0.1 };
+    }
+}
+
+fn camera_control(
+    mut q_camera: Query<&mut Transform, With<MainCamera>>,
+    mut evr_mouse_motion: EventReader<MouseMotion>,
+    movement_settings: Res<MovementSettings>,
+) {
+    let sensitivity = movement_settings.sensitivity;
+
+    let mut transform = q_camera.get_single_mut().unwrap();
+    for ev in evr_mouse_motion.read() {
+        let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+
+        yaw -= (ev.delta.x * sensitivity).to_radians();
+        pitch -= (ev.delta.y * sensitivity).to_radians();
+
+        pitch = pitch.clamp(-1.54, 1.54);
+
+        transform.rotation =
+            Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+    }
 }
