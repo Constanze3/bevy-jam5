@@ -21,13 +21,16 @@
 //! or use an existing third party character controller plugin like Bevy Tnua
 //! (a dynamic character controller).
 
-mod plugin;
+mod player_controller;
 
 use avian3d::{math::*, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy_flycam::prelude::*;
+use bevy_camera_extras::{components::{AttachedTo, FlyCam}, plugins::CameraExtrasPlugin};
 
-use plugin::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use player_controller::plugins::*;
+
+//use plugin::*;
 
 fn main() {
     App::new()
@@ -36,10 +39,15 @@ fn main() {
             PhysicsPlugins::default(),
             CharacterControllerPlugin,
         ))
-        .add_plugins(PlayerPlugin)
+        .add_plugins(CameraExtrasPlugin {
+            cursor_grabbed_by_default: true
+        })
         .add_systems(Startup, setup)
         .add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
+
+        .add_plugins(WorldInspectorPlugin::default())
+
         .run();
 }
 
@@ -52,23 +60,35 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut q_window: Query<&mut Window>,
+    //mut q_window: Query<&mut Window>,
     assets: Res<AssetServer>,
 ) {
-    // Hide cursor
-    q_window.get_single_mut().unwrap().cursor.visible = false;
+
+    // camera
+    let camera = commands.spawn(
+        (
+            Camera3dBundle {
+                transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+                ..default()
+            },
+            FlyCam,
+        )
+    ).id();
 
     // Player
-    commands.spawn((
+    let player = commands.spawn((
         PbrBundle {
             mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
             material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
             transform: Transform::from_xyz(0.0, 1.5, 0.0),
             ..default()
         },
-        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
+        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0, camera)
             .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
-    ));
+    )).id();
+
+    // set camera to follow player
+    commands.entity(camera).insert(AttachedTo(player));
 
     // A cube to move around
     commands.spawn((
@@ -93,16 +113,6 @@ fn setup(
         RigidBody::Static,
     ));
 
-    // Camera
-    // commands.spawn((
-    //     MainCamera,
-    //     Camera3dBundle {
-    //         transform: Transform::from_xyz(0.0, 2.0, 0.0),
-    //         ..default()
-    //     },
-    // ));
-    //
-
     commands.insert_resource(AmbientLight::default());
 
     commands.spawn(DirectionalLightBundle {
@@ -120,8 +130,8 @@ fn setup(
     });
 }
 
-#[derive(Component)]
-struct MainCamera;
+// #[derive(Component)]
+// struct MainCamera;
 
 #[derive(Resource)]
 struct MovementSettings {
@@ -134,23 +144,23 @@ impl Default for MovementSettings {
     }
 }
 
-fn camera_control(
-    mut q_camera: Query<&mut Transform, With<MainCamera>>,
-    mut evr_mouse_motion: EventReader<MouseMotion>,
-    movement_settings: Res<MovementSettings>,
-) {
-    let sensitivity = movement_settings.sensitivity;
+// fn camera_control(
+//     //mut q_camera: Query<&mut Transform, With<MainCamera>>,
+//     mut evr_mouse_motion: EventReader<MouseMotion>,
+//     movement_settings: Res<MovementSettings>,
+// ) {
+//     let sensitivity = movement_settings.sensitivity;
 
-    let mut transform = q_camera.get_single_mut().unwrap();
-    for ev in evr_mouse_motion.read() {
-        let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+//     let mut transform = q_camera.get_single_mut().unwrap();
+//     for ev in evr_mouse_motion.read() {
+//         let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
 
-        yaw -= (ev.delta.x * sensitivity).to_radians();
-        pitch -= (ev.delta.y * sensitivity).to_radians();
+//         yaw -= (ev.delta.x * sensitivity).to_radians();
+//         pitch -= (ev.delta.y * sensitivity).to_radians();
 
-        pitch = pitch.clamp(-1.54, 1.54);
+//         pitch = pitch.clamp(-1.54, 1.54);
 
-        transform.rotation =
-            Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
-    }
-}
+//         transform.rotation =
+//             Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+//     }
+// }
