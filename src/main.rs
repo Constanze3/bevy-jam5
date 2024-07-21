@@ -25,7 +25,7 @@ mod plugin;
 mod simulation_state;
 
 use avian3d::{math::*, prelude::*};
-use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy::{input::mouse::MouseMotion, math::VectorSpace, prelude::*};
 
 use plugin::*;
 use simulation_state::*;
@@ -45,7 +45,8 @@ fn main() {
         ))
         .add_systems(Update, (
             // first_person_camera_control,
-            camera_follow_car,
+            // camera_follow_car,
+            free_camera_control
         ).run_if(in_state(SimulationState::Running)))
         .insert_resource(MovementSettings::default())
         .run();
@@ -195,7 +196,7 @@ struct MovementSettings {
 
 impl Default for MovementSettings {
     fn default() -> Self {
-        return Self { sensitivity: 0.1, speed: 0.1 };
+        return Self { sensitivity: 0.1, speed: 0.4 };
     }
 }
 
@@ -251,21 +252,27 @@ fn free_camera_control(
         direction.y += forward.y;
         direction.z += forward.z;
     }
-    // if keys.pressed(KeyCode::KeyS) {
-    //     direction -= forward;
-    // }
-    // if keys.pressed(KeyCode::KeyA) {
-    //     direction -= right;
-    // }
-    // if keys.pressed(KeyCode::KeyD) {
-    //     direction += right;
-    // }
-    // if keys.pressed(KeyCode::Space) {
-    //     direction += Vec3::Y;
-    // }
-    // if keys.pressed(KeyCode::ShiftLeft) {
-    //     direction -= Vec3::Y;
-    // }
+    if keys.pressed(KeyCode::KeyS) {
+        direction.x -= forward.x;
+        direction.y -= forward.y;
+        direction.z -= forward.z;
+    }
+    if keys.pressed(KeyCode::KeyA) {
+        direction.x -= right.x;
+        direction.y -= right.y;
+        direction.z -= right.z
+    }
+    if keys.pressed(KeyCode::KeyD) {
+        direction.x += right.x;
+        direction.y += right.y;
+        direction.z += right.z
+    }
+    if keys.pressed(KeyCode::Space) {
+        direction += Vec3::Y;
+    }
+    if keys.pressed(KeyCode::ShiftLeft) {
+        direction -= Vec3::Y;
+    }
 
     if direction.length() > 0.0 {
         direction = direction.normalize();
