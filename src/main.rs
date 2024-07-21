@@ -21,11 +21,14 @@
 //! or use an existing third party character controller plugin like Bevy Tnua
 //! (a dynamic character controller).
 
+mod pause_menu;
 mod plugin;
 
 use avian3d::{math::*, prelude::*};
+use bevy::prelude::*;
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_flycam::prelude::*;
+use pause_menu::{PauseMenu, PauseMenuPlugin};
 
 use plugin::*;
 
@@ -35,19 +38,14 @@ fn main() {
             DefaultPlugins,
             PhysicsPlugins::default(),
             CharacterControllerPlugin,
+            PauseMenuPlugin,
         ))
         .add_plugins(PlayerPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
         .run();
 }
 
-fn close_on_esc(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>) {
-    if keys.just_pressed(KeyCode::Escape) {
-        exit.send(AppExit::Success);
-    }
-}
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
