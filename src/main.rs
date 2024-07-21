@@ -25,6 +25,8 @@ mod plugin;
 
 use avian3d::{math::*, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy_flycam::prelude::*;
+
 use plugin::*;
 
 fn main() {
@@ -34,8 +36,8 @@ fn main() {
             PhysicsPlugins::default(),
             CharacterControllerPlugin,
         ))
+        .add_plugins(PlayerPlugin)
         .add_systems(Startup, setup)
-        .add_systems(Update, camera_control)
         .insert_resource(MovementSettings::default())
         .run();
 }
@@ -77,7 +79,7 @@ fn setup(
     // Environment (see the `collider_constructors` example for creating colliders from scenes)
     commands.spawn((
         SceneBundle {
-            scene: assets.load("character_controller_demo.glb#Scene0"),
+            scene: assets.load("test2.glb#Scene0"),
             transform: Transform::default(),
             ..default()
         },
@@ -85,26 +87,31 @@ fn setup(
         RigidBody::Static,
     ));
 
-    // Light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 2_000_000.0,
-            range: 50.0,
+    // Camera
+    // commands.spawn((
+    //     MainCamera,
+    //     Camera3dBundle {
+    //         transform: Transform::from_xyz(0.0, 2.0, 0.0),
+    //         ..default()
+    //     },
+    // ));
+    //
+
+    commands.insert_resource(AmbientLight::default());
+
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(0.0, 15.0, 0.0),
-        ..default()
-    });
-
-    // Camera
-    commands.spawn((
-        MainCamera,
-        Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 2.0, 0.0),
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.),
             ..default()
         },
-    ));
+        ..default()
+    });
 }
 
 #[derive(Component)]
