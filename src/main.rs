@@ -45,7 +45,7 @@ fn main() {
             DefaultPlugins,
             PhysicsPlugins::default(),
             SimulationStatePlugin,
-            CharacterControllerPlugin,
+            // CharacterControllerPlugin,
             CarControllerPlugin,
             // PlayerPlugin,
         ))
@@ -88,12 +88,8 @@ fn setup_player(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut q_window: Query<&mut Window>,
     assets: Res<AssetServer>,
 ) {
-    // Hide cursor
-    q_window.get_single_mut().unwrap().cursor.visible = false;
-
     // Player
     commands.spawn((
         PbrBundle {
