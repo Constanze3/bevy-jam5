@@ -38,10 +38,16 @@ fn main() {
         ))
         .add_plugins(PlayerPlugin)
         .add_systems(Startup, setup)
+        .add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
         .run();
 }
 
+fn close_on_esc(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>) {
+    if keys.just_pressed(KeyCode::Escape) {
+        exit.send(AppExit::Success);
+    }
+}
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -79,7 +85,7 @@ fn setup(
     // Environment (see the `collider_constructors` example for creating colliders from scenes)
     commands.spawn((
         SceneBundle {
-            scene: assets.load("test2.glb#Scene0"),
+            scene: assets.load("town.glb#Scene0"),
             transform: Transform::default(),
             ..default()
         },
