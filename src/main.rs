@@ -22,20 +22,24 @@
 //! (a dynamic character controller).
 
 mod plugin;
+mod simulation_state;
 
 use avian3d::{math::*, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
+
 use plugin::*;
+use simulation_state::*;
 
 fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
+            SimulationStatePlugin,
             CharacterControllerPlugin,
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, camera_control)
+        .add_systems(Update, camera_control.run_if(in_state(SimulationState::Running)))
         .insert_resource(MovementSettings::default())
         .run();
 }
