@@ -21,41 +21,71 @@
 //! or use an existing third party character controller plugin like Bevy Tnua
 //! (a dynamic character controller).
 
-mod pause_menu;
+mod cameras;
+mod car_controller;
 mod plugin;
+mod resources;
+mod simulation_state;
+mod ui;
+mod utils;
 
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_flycam::prelude::*;
-use pause_menu::{PauseMenu, PauseMenuPlugin};
-
+use cameras::*;
+use car_controller::*;
 use plugin::*;
+use simulation_state::SimulationStatePlugin;
+use ui::pause_menu::PauseMenuPlugin;
 
 fn main() {
     App::new()
+        .insert_resource(MovementSettings::default())
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
             CharacterControllerPlugin,
             PauseMenuPlugin,
+            SimulationStatePlugin,
         ))
         .add_plugins(PlayerPlugin)
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup_world, setup_camera).chain())
         .insert_resource(MovementSettings::default())
         .run();
 }
 
-fn setup(
+fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
+    // Environment (see the `collider_constructors` example for creating colliders from scenes)
+    commands.spawn((
+        SceneBundle {
+            scene: assets.load("town.glb#Scene0"),
+            transform: Transform::default(),
+            ..default()
+        },
+        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        RigidBody::Static,
+    ));
+
+    // Light
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            intensity: 2_000_000.0,
+            range: 50.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(0.0, 15.0, 0.0),
+        ..default()
+    });
+}
+
+fn setup_player(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut q_window: Query<&mut Window>,
     assets: Res<AssetServer>,
 ) {
-    // Hide cursor
-    q_window.get_single_mut().unwrap().cursor.visible = false;
-
     // Player
     commands.spawn((
         PbrBundle {
@@ -91,64 +121,24 @@ fn setup(
         RigidBody::Static,
     ));
 
-    // Camera
-    // commands.spawn((
-    //     MainCamera,
-    //     Camera3dBundle {
-    //         transform: Transform::from_xyz(0.0, 2.0, 0.0),
-    //         ..default()
-    //     },
-    // ));
-    //
-
-    commands.insert_resource(AmbientLight::default());
-
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance: light_consts::lux::OVERCAST_DAY,
+    // Light
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            intensity: 2_000_000.0,
+            range: 50.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 4.),
-            ..default()
-        },
+        transform: Transform::from_xyz(0.0, 15.0, 0.0),
         ..default()
     });
-}
 
-#[derive(Component)]
-struct MainCamera;
-
-#[derive(Resource)]
-struct MovementSettings {
-    sensitivity: f32,
-}
-
-impl Default for MovementSettings {
-    fn default() -> Self {
-        return Self { sensitivity: 0.1 };
-    }
-}
-
-fn camera_control(
-    mut q_camera: Query<&mut Transform, With<MainCamera>>,
-    mut evr_mouse_motion: EventReader<MouseMotion>,
-    movement_settings: Res<MovementSettings>,
-) {
-    let sensitivity = movement_settings.sensitivity;
-
-    let mut transform = q_camera.get_single_mut().unwrap();
-    for ev in evr_mouse_motion.read() {
-        let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-
-        yaw -= (ev.delta.x * sensitivity).to_radians();
-        pitch -= (ev.delta.y * sensitivity).to_radians();
-
-        pitch = pitch.clamp(-1.54, 1.54);
-
-        transform.rotation =
-            Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
-    }
+    // Camera
+    commands.spawn((
+        MainCamera,
+        Camera3dBundle {
+            transform: Transform::from_xyz(0.0, 2.0, 0.0),
+            ..default()
+        },
+    ));
 }
