@@ -49,7 +49,7 @@ fn on_simulation_paused(
     println!("Game paused.");
 
     let window = q_windows.single_mut();
-    ungrab_cursor(window);
+    release_cursor(window);
 }
 
 fn on_simulation_unpaused(
@@ -62,7 +62,7 @@ fn on_simulation_unpaused(
     grab_cursor(window);
 }
 
-fn ungrab_cursor(mut window: Mut<Window>) {
+fn release_cursor(mut window: Mut<Window>) {
     window.cursor.grab_mode = CursorGrabMode::None;
     window.cursor.visible = true;
 }
