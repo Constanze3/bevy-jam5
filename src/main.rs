@@ -26,7 +26,8 @@ mod simulation_state;
 mod utils;
 
 use avian3d::{math::*, prelude::*};
-use bevy::{input::mouse::MouseMotion, math::VectorSpace, prelude::*};
+use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy_flycam::prelude::*;
 
 use plugin::*;
 use simulation_state::*;
@@ -38,8 +39,10 @@ fn main() {
             DefaultPlugins,
             PhysicsPlugins::default(),
             SimulationStatePlugin,
-            // CharacterControllerPlugin,
+            CharacterControllerPlugin,
         ))
+        .add_plugins(PlayerPlugin)
+
         .add_systems(Startup, (
             setup_world,
             setup_camera,
@@ -62,7 +65,7 @@ fn setup_world(
     // Environment (see the `collider_constructors` example for creating colliders from scenes)
     commands.spawn((
         SceneBundle {
-            scene: assets.load("character_controller_demo.glb#Scene0"),
+            scene: assets.load("town.glb#Scene0"),
             transform: Transform::default(),
             ..default()
         },
@@ -178,10 +181,10 @@ fn move_car(
     
     // Determine movement direction based on input
     if keyboard_input.pressed(KeyCode::KeyW) {
-        linear_velocity += forward * movement_settings.car_speed * time.delta_seconds();
+        // linear_velocity += forward * movement_settings.car_speed * time.delta_seconds();
     }
     if keyboard_input.pressed(KeyCode::KeyS) {
-        linear_velocity -= forward * movement_settings.car_speed * time.delta_seconds();
+        // linear_velocity -= forward * movement_settings.car_speed * time.delta_seconds();
     }
 
     // Determine rotational momentum
@@ -208,7 +211,6 @@ fn move_car(
     // }
 
 }
-
 
 fn setup_player(
     mut commands: Commands,
@@ -247,7 +249,7 @@ fn setup_player(
     // Environment (see the `collider_constructors` example for creating colliders from scenes)
     commands.spawn((
         SceneBundle {
-            scene: assets.load("character_controller_demo.glb#Scene0"),
+            scene: assets.load("town.glb#Scene0"),
             transform: Transform::default(),
             ..default()
         },
