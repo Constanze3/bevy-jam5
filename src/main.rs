@@ -36,15 +36,88 @@ fn main() {
             DefaultPlugins,
             PhysicsPlugins::default(),
             SimulationStatePlugin,
-            CharacterControllerPlugin,
+            // CharacterControllerPlugin,
         ))
-        .add_systems(Startup, setup)
-        .add_systems(Update, camera_control.run_if(in_state(SimulationState::Running)))
+        .add_systems(Startup, (
+            setup_world,
+            setup_camera,
+            setup_car
+        ))
+        .add_systems(Update, (
+            // first_person_camera_control,
+            camera_follow_car,
+        ).run_if(in_state(SimulationState::Running)))
         .insert_resource(MovementSettings::default())
         .run();
 }
 
-fn setup(
+fn setup_world(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+) {
+    // Environment (see the `collider_constructors` example for creating colliders from scenes)
+    commands.spawn((
+        SceneBundle {
+            scene: assets.load("character_controller_demo.glb#Scene0"),
+            transform: Transform::default(),
+            ..default()
+        },
+        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        RigidBody::Static,
+    ));
+
+    // Light
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            intensity: 2_000_000.0,
+            range: 50.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(0.0, 15.0, 0.0),
+        ..default()
+    });
+}
+
+fn setup_camera(
+    mut commands: Commands,
+) {
+    // Camera
+    commands.spawn((
+        MainCamera,
+        Camera3dBundle {
+            transform: Transform::from_xyz(5.0, 5.0, 5.0),
+            ..default()
+        },
+    ));
+}
+
+fn setup_car(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    // Car
+    commands.spawn((
+        RigidBody::Dynamic,
+        Collider::cuboid(1.0, 1.0, 1.0),
+        AngularVelocity(Vec3::new(2.5, 3.5, 1.5)),
+        PbrBundle {
+            mesh: meshes.add(Cuboid::new(1.0, 1.0, 1.0)),
+            material: materials.add(Color::srgb_u8(124, 144, 255)),
+            transform: Transform::from_xyz(0.0, 4.0, 0.0),
+            ..default()
+        },
+    ));
+}
+
+fn camera_follow_car(
+    mut q_camera: Query<&mut Transform, With<MainCamera>>,
+) {
+    // let mut camera = q_camera.get_single_mut().unwrap();
+}
+
+fn setup_player(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -117,15 +190,16 @@ struct MainCamera;
 #[derive(Resource)]
 struct MovementSettings {
     sensitivity: f32,
+    speed: f32,
 }
 
 impl Default for MovementSettings {
     fn default() -> Self {
-        return Self { sensitivity: 0.1 };
+        return Self { sensitivity: 0.1, speed: 0.1 };
     }
 }
 
-fn camera_control(
+fn first_person_camera_control(
     mut q_camera: Query<&mut Transform, With<MainCamera>>,
     mut evr_mouse_motion: EventReader<MouseMotion>,
     movement_settings: Res<MovementSettings>,
@@ -143,5 +217,58 @@ fn camera_control(
 
         transform.rotation =
             Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+    }
+}
+
+
+fn free_camera_control(
+    mut q_camera: Query<&mut Transform, With<MainCamera>>,
+    mut evr_mouse_motion: EventReader<MouseMotion>,
+    keys: Res<ButtonInput<KeyCode>>,
+    movement_settings: Res<MovementSettings>,
+) {
+    let sensitivity = movement_settings.sensitivity;
+
+    let mut transform = q_camera.get_single_mut().unwrap();
+    for ev in evr_mouse_motion.read() {
+        let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+
+        yaw -= (ev.delta.x * sensitivity).to_radians();
+        pitch -= (ev.delta.y * sensitivity).to_radians();
+
+        pitch = pitch.clamp(-1.54, 1.54);
+
+        transform.rotation =
+            Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+    }
+
+    let forward = transform.forward();
+    let right = transform.right();
+    let mut direction = Vec3::ZERO;
+
+    if keys.pressed(KeyCode::KeyW) {
+        direction.x += forward.x;
+        direction.y += forward.y;
+        direction.z += forward.z;
+    }
+    // if keys.pressed(KeyCode::KeyS) {
+    //     direction -= forward;
+    // }
+    // if keys.pressed(KeyCode::KeyA) {
+    //     direction -= right;
+    // }
+    // if keys.pressed(KeyCode::KeyD) {
+    //     direction += right;
+    // }
+    // if keys.pressed(KeyCode::Space) {
+    //     direction += Vec3::Y;
+    // }
+    // if keys.pressed(KeyCode::ShiftLeft) {
+    //     direction -= Vec3::Y;
+    // }
+
+    if direction.length() > 0.0 {
+        direction = direction.normalize();
+        transform.translation += direction * movement_settings.speed;
     }
 }
