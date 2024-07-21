@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 #[derive(Resource)]
 pub struct MovementSettings {
-    pub sensitivity: f32,
-    pub speed: f32,
+    pub camera_sensitivity: f32,
+    pub player_movement_speed: f32,
     pub car_drive_acceleration: f32,
     pub car_turn_acceleration: f32,
     pub car_rolling_friction: f32
@@ -12,8 +12,8 @@ pub struct MovementSettings {
 impl Default for MovementSettings {
     fn default() -> Self {
         return Self { 
-            sensitivity: 0.1,
-            speed: 0.4,
+            camera_sensitivity: 0.1,
+            player_movement_speed: 0.4,
             car_drive_acceleration: 10.0,
             car_turn_acceleration: 3.0,
             car_rolling_friction: 2.0

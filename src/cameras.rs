@@ -23,7 +23,7 @@ pub fn first_person_camera_control(
     mut evr_mouse_motion: EventReader<MouseMotion>,
     movement_settings: Res<MovementSettings>,
 ) {
-    let sensitivity = movement_settings.sensitivity;
+    let sensitivity = movement_settings.camera_sensitivity;
 
     let mut transform = q_camera.get_single_mut().unwrap();
     for ev in evr_mouse_motion.read() {
@@ -46,7 +46,7 @@ pub fn free_camera_control(
     keys: Res<ButtonInput<KeyCode>>,
     movement_settings: Res<MovementSettings>,
 ) {
-    let sensitivity = movement_settings.sensitivity;
+    let sensitivity = movement_settings.camera_sensitivity;
 
     let mut transform = q_camera.get_single_mut().unwrap();
     for ev in evr_mouse_motion.read() {
@@ -86,6 +86,6 @@ pub fn free_camera_control(
 
     if direction.length() > 0.0 {
         direction = direction.normalize();
-        transform.translation += direction * movement_settings.speed;
+        transform.translation += direction * movement_settings.player_movement_speed;
     }
 }
