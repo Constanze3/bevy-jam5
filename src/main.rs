@@ -21,22 +21,24 @@
 //! or use an existing third party character controller plugin like Bevy Tnua
 //! (a dynamic character controller).
 
+mod cameras;
+mod car_controller;
+mod custom_skybox;
 mod plugin;
+mod resources;
 mod simulation_state;
 mod utils;
-mod car_controller;
-mod cameras;
-mod resources;
 
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
-// use bevy_flycam::prelude::*;
+use bevy_flycam::prelude::PlayerPlugin;
 
-use car_controller::*;
+use cameras::*;
+// use car_controller::*;
+use custom_skybox::*;
 use plugin::*;
 use resources::*;
 use simulation_state::*;
-use cameras::*;
 
 fn main() {
     App::new()
@@ -46,20 +48,47 @@ fn main() {
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             // CharacterControllerPlugin,
-            CarControllerPlugin,
-            // PlayerPlugin,
+            // CarControllerPlugin,
+            PlayerPlugin,
+            CustomSkyboxPlugin,
         ))
-        .add_systems(Startup, (
-            setup_world,
-            setup_camera,
-        ).chain())
+        .add_systems(Startup, (setup_world).chain())
+        .add_systems(
+            Update,
+            test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
+        )
+        .add_systems(OnEnter(TestSkyboxState::Done), apply_custom_skyboxes)
+        .insert_state(TestSkyboxState::Waiting)
         .run();
 }
 
-fn setup_world(
+#[derive(States, Hash, PartialEq, Eq, Debug, Clone)]
+enum TestSkyboxState {
+    Waiting,
+    Done,
+}
+
+fn test_skybox(
+    cameras: Query<Entity, With<Camera>>,
     mut commands: Commands,
     assets: Res<AssetServer>,
+    mut next_state: ResMut<NextState<TestSkyboxState>>,
 ) {
+    if cameras.is_empty() {
+        return;
+    }
+
+    commands
+        .entity(cameras.get_single().unwrap())
+        .insert(CustomSkybox {
+            cubemap: load_cubemap("sky", assets),
+            brightness: 1000.0,
+        });
+
+    next_state.set(TestSkyboxState::Done);
+}
+
+fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
     // Environment (see the `collider_constructors` example for creating colliders from scenes)
     commands.spawn((
         SceneBundle {
@@ -71,15 +100,22 @@ fn setup_world(
         RigidBody::Static,
     ));
 
-    // Light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 2_000_000.0,
-            range: 50.0,
+    commands.insert_resource(AmbientLight {
+        color: Color::srgb_u8(210, 220, 240),
+        brightness: 100.0,
+    });
+
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(0.0, 15.0, 0.0),
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 1.8),
+            ..default()
+        },
         ..default()
     });
 }
