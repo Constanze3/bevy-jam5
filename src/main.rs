@@ -23,19 +23,19 @@
 
 mod cameras;
 mod car_controller;
-mod custom_skybox;
+mod cubemap_factory;
 mod plugin;
 mod resources;
 mod simulation_state;
 mod utils;
 
 use avian3d::{math::*, prelude::*};
-use bevy::prelude::*;
+use bevy::{core_pipeline::Skybox, prelude::*};
 use bevy_flycam::prelude::PlayerPlugin;
 
 use cameras::*;
 // use car_controller::*;
-use custom_skybox::*;
+use cubemap_factory::*;
 use plugin::*;
 use resources::*;
 use simulation_state::*;
@@ -50,14 +50,13 @@ fn main() {
             // CharacterControllerPlugin,
             // CarControllerPlugin,
             PlayerPlugin,
-            CustomSkyboxPlugin,
+            CubemapFactoryPlugin,
         ))
         .add_systems(Startup, (setup_world).chain())
         .add_systems(
             Update,
             test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
         )
-        .add_systems(OnEnter(TestSkyboxState::Done), apply_custom_skyboxes)
         .insert_state(TestSkyboxState::Waiting)
         .run();
 }
@@ -71,7 +70,9 @@ enum TestSkyboxState {
 fn test_skybox(
     cameras: Query<Entity, With<Camera>>,
     mut commands: Commands,
+    mut cubemap_factory: ResMut<CubemapFactory>,
     assets: Res<AssetServer>,
+    images: Res<Assets<Image>>,
     mut next_state: ResMut<NextState<TestSkyboxState>>,
 ) {
     if cameras.is_empty() {
@@ -80,8 +81,8 @@ fn test_skybox(
 
     commands
         .entity(cameras.get_single().unwrap())
-        .insert(CustomSkybox {
-            cubemap: load_cubemap("sky", assets),
+        .insert(Skybox {
+            image: cubemap_factory.load_from_folder("sky", assets, images),
             brightness: 1000.0,
         });
 
