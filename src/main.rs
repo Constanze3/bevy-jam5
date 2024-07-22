@@ -102,8 +102,8 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
     ));
 
     commands.insert_resource(AmbientLight {
-        color: Color::srgb_u8(210, 220, 240),
-        brightness: 100.0,
+        color: Color::srgb_u8(182, 205, 214),
+        brightness: 200.0,
     });
 
     commands.spawn(DirectionalLightBundle {
