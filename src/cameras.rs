@@ -1,13 +1,11 @@
-use bevy::{prelude::*, input::mouse::*};
+use bevy::{input::mouse::*, prelude::*};
 
 use super::{resources::*, utils::*};
 
 #[derive(Component)]
 pub struct MainCamera;
 
-pub fn setup_camera(
-    mut commands: Commands,
-) {
+pub fn setup_camera(mut commands: Commands) {
     // Camera
     commands.spawn((
         MainCamera,
@@ -38,7 +36,6 @@ pub fn first_person_camera_control(
             Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
     }
 }
-
 
 pub fn free_camera_control(
     mut q_camera: Query<&mut Transform, With<MainCamera>>,
