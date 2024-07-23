@@ -1,11 +1,11 @@
+use crate::resources::MovementSettings;
+use crate::simulation_state::*;
+use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
-use crate::components::{ButtonAction, PauseMenu, SensitivityMenu};
-use crate::SimulationState;
 
-pub fn show_pause_menu(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
+use super::components::*;
+
+pub fn show_pause_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn((
             NodeBundle {
@@ -112,10 +112,7 @@ pub fn hide_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMe
 }
 
 pub fn interact_with_buttons(
-    interaction_query: Query<
-        (&Interaction, &ButtonAction),
-        (Changed<Interaction>, With<Button>),
-    >,
+    interaction_query: Query<(&Interaction, &ButtonAction), (Changed<Interaction>, With<Button>)>,
     mut exit: EventWriter<AppExit>,
     mut next_simulation_state: ResMut<NextState<SimulationState>>,
     mut commands: EventWriter<ShowSensitivityMenu>,
@@ -140,10 +137,7 @@ pub fn interact_with_buttons(
 }
 
 pub fn interact_with_sensitivity_buttons(
-    interaction_query: Query<
-        (&Interaction, &ButtonAction),
-        (Changed<Interaction>, With<Button>),
-    >,
+    interaction_query: Query<(&Interaction, &ButtonAction), (Changed<Interaction>, With<Button>)>,
     mut commands: EventWriter<ShowPauseMenu>,
     sensitivity_menu_query: Query<Entity, With<SensitivityMenu>>,
 ) {
@@ -162,104 +156,102 @@ pub fn show_sensitivity_menu(
     mut events: EventReader<ShowSensitivityMenu>,
     pause_menu_query: Query<Entity, With<PauseMenu>>,
 ) {
-    if events.iter().next().is_some() {
-        for entity in pause_menu_query.iter() {
-            commands.entity(entity).despawn_recursive();
-        }
+    for entity in pause_menu_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
 
-        commands
-            .spawn((
-                NodeBundle {
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    height: Val::Percent(100.0),
+                    width: Val::Percent(100.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                background_color: Color::srgba(0.0, 0.0, 0.0, 0.7).into(),
+                ..default()
+            },
+            SensitivityMenu,
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: Style {
+                            height: Val::Px(50.0),
+                            width: Val::Px(100.0),
+                            position_type: PositionType::Absolute,
+                            top: Val::Px(20.0),
+                            left: Val::Px(20.0),
+                            ..default()
+                        },
+                        background_color: Color::srgb(0.15, 0.15, 0.15).into(),
+                        ..default()
+                    },
+                    ButtonAction::Back,
+                ))
+                .with_children(|parent| {
+                    parent.spawn(TextBundle {
+                        text: Text::from_section(
+                            "Back",
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 30.0,
+                                color: Color::WHITE,
+                            },
+                        ),
+                        ..default()
+                    });
+                });
+
+            parent
+                .spawn(NodeBundle {
                     style: Style {
-                        height: Val::Percent(100.0),
-                        width: Val::Percent(100.0),
+                        height: Val::Px(50.0),
+                        width: Val::Percent(50.0),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    background_color: Color::srgba(0.0, 0.0, 0.0, 0.7).into(),
                     ..default()
-                },
-                SensitivityMenu,
-            ))
-            .with_children(|parent| {
-                parent
-                    .spawn((
-                        ButtonBundle {
+                })
+                .with_children(|parent| {
+                    parent.spawn(TextBundle {
+                        text: Text::from_section(
+                            "Sensitivity: ",
+                            TextStyle {
+                                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                                font_size: 30.0,
+                                color: Color::WHITE,
+                            },
+                        ),
+                        ..default()
+                    });
+
+                    parent
+                        .spawn(NodeBundle {
                             style: Style {
-                                height: Val::Px(50.0),
-                                width: Val::Px(100.0),
-                                position_type: PositionType::Absolute,
-                                top: Val::Px(20.0),
-                                left: Val::Px(20.0),
+                                height: Val::Px(10.0),
+                                width: Val::Percent(100.0),
+                                margin: UiRect::all(Val::Px(10.0)),
                                 ..default()
                             },
-                            background_color: Color::srgb(0.15, 0.15, 0.15).into(),
                             ..default()
-                        },
-                        ButtonAction::Back,
-                    ))
-                    .with_children(|parent| {
-                        parent.spawn(TextBundle {
-                            text: Text::from_section(
-                                "Back",
-                                TextStyle {
-                                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                    font_size: 30.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            ..default()
-                        });
-                    });
-
-                parent
-                    .spawn(NodeBundle {
-                        style: Style {
-                            height: Val::Px(50.0),
-                            width: Val::Percent(50.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        ..default()
-                    })
-                    .with_children(|parent| {
-                        parent.spawn(TextBundle {
-                            text: Text::from_section(
-                                "Sensitivity: ",
-                                TextStyle {
-                                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                                    font_size: 30.0,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            ..default()
-                        });
-
-                        parent
-                            .spawn(NodeBundle {
+                        })
+                        .with_children(|parent| {
+                            parent.spawn(NodeBundle {
                                 style: Style {
                                     height: Val::Px(10.0),
-                                    width: Val::Percent(100.0),
-                                    margin: UiRect::all(Val::Px(10.0)),
+                                    width: Val::Px(10.0),
                                     ..default()
                                 },
                                 ..default()
-                            })
-                            .with_children(|parent| {
-                                parent.spawn(NodeBundle {
-                                    style: Style {
-                                        height: Val::Px(10.0),
-                                        width: Val::Px(10.0),
-                                        ..default()
-                                    },
-                                    ..default()
-                                });
                             });
-                    });
-            });
-    }
+                        });
+                });
+        });
 }
 
 pub fn update_sensitivity(
@@ -267,29 +259,28 @@ pub fn update_sensitivity(
     mut sensitivity: ResMut<MovementSettings>,
     mut mouse_motion_events: EventReader<MouseMotion>,
 ) {
-    for event in &mouse_motion_events {
-        for mut style in slider_query.iter_mut() {
-            if let Val::Px(x) = style.left {
-                style.left = Val::Px(x + event.delta.x);
-                sensitivity.sensitivity = x + event.delta.x;
-            }
-        }
-    }
+    // for event in &mouse_motion_events {
+    //     for mut style in slider_query.iter_mut() {
+    //         if let Val::Px(x) = style.left {
+    //             style.left = Val::Px(x + event.delta.x);
+    //             sensitivity.sensitivity = x + event.delta.x;
+    //         }
+    //     }
+    // }
 }
 
+#[derive(Event)]
 pub struct ShowPauseMenu;
+#[derive(Event)]
 pub struct ShowSensitivityMenu;
 
 pub fn handle_show_pause_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut events: EventReader<ShowPauseMenu>,
     sensitivity_menu_query: Query<Entity, With<SensitivityMenu>>,
 ) {
-    if events.iter().next().is_some() {
-        for entity in sensitivity_menu_query.iter() {
-            commands.entity(entity).despawn_recursive();
-        }
-        show_pause_menu(commands, asset_server);
+    for entity in sensitivity_menu_query.iter() {
+        commands.entity(entity).despawn_recursive();
     }
+    show_pause_menu(commands, asset_server);
 }

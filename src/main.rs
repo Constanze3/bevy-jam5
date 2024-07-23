@@ -37,7 +37,7 @@ use cameras::*;
 use car_controller::*;
 use plugin::*;
 use simulation_state::SimulationStatePlugin;
-use ui::pause_menu::PauseMenuPlugin;
+use ui::pause_menu::plugins::PauseMenuPlugin;
 
 fn main() {
     App::new()
