@@ -30,7 +30,6 @@ mod resources;
 
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
-// use bevy_flycam::prelude::*;
 
 use car_controller::*;
 use plugin::*;
@@ -60,7 +59,7 @@ fn setup_world(
     mut commands: Commands,
     assets: Res<AssetServer>,
 ) {
-    // Environment (see the `collider_constructors` example for creating colliders from scenes)
+    // Town
     commands.spawn((
         SceneBundle {
             scene: assets.load("town.glb#Scene0"),
