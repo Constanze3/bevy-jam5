@@ -248,6 +248,7 @@ pub fn movement(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     player_controls: Res<PlayerControls>,
+    player_settings: Res<PlayerSettings>,
     //mut movement_event_reader: EventReader<MovementAction>,
     mut controllers: Query<(
         &MovementAcceleration,
@@ -306,8 +307,14 @@ pub fn movement(
                 //println!("moving towards: {:#}", direction.0);
                 // linear_velocity.x += direction.x * movement_acceleration.0 * delta_time;
                 // linear_velocity.z -= direction.z * movement_acceleration.0 * delta_time;
-                linear_velocity.x = velocity.x * movement_acceleration.0 * delta_time * 10.0;
-                linear_velocity.z = velocity.z * movement_acceleration.0 * delta_time * 10.0;
+
+            let mut runspeed_increase = 1.0;
+
+            if keys.any_pressed(player_controls.sprinting.clone()) {
+                runspeed_increase = player_settings.run_speedup_factor;
+            }
+            linear_velocity.x = velocity.x * movement_acceleration.0 * delta_time * player_settings.speed * runspeed_increase;
+            linear_velocity.z = velocity.z * movement_acceleration.0 * delta_time * player_settings.speed * runspeed_increase; 
 
             //}
             if is_grounded {

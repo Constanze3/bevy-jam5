@@ -9,6 +9,7 @@ impl Plugin for CharacterControllerPlugin {
         app
         //.add_event::<MovementAction>()
         .insert_resource(PlayerControls::default())
+        .insert_resource(PlayerSettings::default())
         .add_systems(
             Update,
             (
