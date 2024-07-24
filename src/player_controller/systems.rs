@@ -1,5 +1,6 @@
 use avian3d::{math::*, prelude::*};
-use bevy::{ecs::query::Has, prelude::*};
+use bevy::{ecs::query::Has, math::VectorSpace, prelude::*};
+use bevy_camera_extras::components::AttachedTo;
 
 use super::*;
 
@@ -168,39 +169,52 @@ pub fn kinematic_controller_collisions(
     }
 }
 
-/// Sends [`MovementAction`] events based on gamepad input.
-pub fn gamepad_input(
-    mut movement_event_writer: EventWriter<MovementAction>,
-    gamepads: Res<Gamepads>,
-    axes: Res<Axis<GamepadAxis>>,
-    buttons: Res<ButtonInput<GamepadButton>>,
+/// gives a marker component to target of camera so it can interop with its attached camera
+pub fn connect_camera_to_reciever(
+    mut commands: Commands,
+    follower_cameras: Query<(Entity, &AttachedTo)>
+    //marked_players: Query<Entity, (With<Player>, Without<BoundCamera>)>
 ) {
-    for gamepad in gamepads.iter() {
-        let axis_lx = GamepadAxis {
-            gamepad,
-            axis_type: GamepadAxisType::LeftStickX,
-        };
-        let axis_ly = GamepadAxis {
-            gamepad,
-            axis_type: GamepadAxisType::LeftStickY,
-        };
-
-        if let (Some(x), Some(y)) = (axes.get(axis_lx), axes.get(axis_ly)) {
-            movement_event_writer.send(MovementAction::Move(
-                Vector2::new(x as Scalar, y as Scalar).clamp_length_max(1.0),
-            ));
-        }
-
-        let jump_button = GamepadButton {
-            gamepad,
-            button_type: GamepadButtonType::South,
-        };
-
-        if buttons.just_pressed(jump_button) {
-            movement_event_writer.send(MovementAction::Jump);
-        }
+    for (camera, attach_target) in follower_cameras.iter() {
+        commands.entity(attach_target.0).insert(BoundCamera(camera));
     }
 }
+
+// /// sets [`DesiredDirection`] for player.
+// pub fn keyboard_input(
+//     keys: Res<ButtonInput<KeyCode>>,
+//     player_controls: Res<PlayerControls>,
+//     mut desired_directions: Query<&mut DesiredDirection>
+// ) {
+//     let up = keys.any_pressed(player_controls.forward.clone());
+//     let down = keys.any_pressed(player_controls.back.clone());
+//     let left = keys.any_pressed(player_controls.left.clone());
+//     let right = keys.any_pressed(player_controls.right.clone());
+
+//     let jump = keys.just_pressed(KeyCode::Space);
+    
+//     // let horizontal = right as i8 - left as i8;
+//     // let vertical = up as i8 - down as i8;
+//     let sideways_movement = right as i8 - left as i8;
+//     let frontal_movement = up as i8 - down as i8;
+//     let vertical_movement = jump as i8 as f32;
+
+
+
+
+//     // let new_direction = Vector2::new(sideways_movement as Scalar, frontal_movement as Scalar).clamp_length_max(1.0);
+//     let xy_momentum: Vec2 = Vector2::new(sideways_movement as Scalar, frontal_movement as Scalar).clamp_length_max(1.0);
+
+//     let new_direction = Vector3::new(xy_momentum.x ,vertical_movement, xy_momentum.y);
+
+//     // this will move every player that exists in sync. If this is refactored for multiplayer, this will need to be refactored.
+//     // crashing for more then 1 player is not worth it.
+//     for mut direction in desired_directions.iter_mut() {
+//         **direction = new_direction;
+//     }
+
+// }
+
 
 /// Updates the [`Grounded`] status for character controllers.
 pub fn update_grounded(
@@ -232,35 +246,93 @@ pub fn update_grounded(
 /// Responds to [`MovementAction`] events and moves character controllers accordingly.
 pub fn movement(
     time: Res<Time>,
-    mut movement_event_reader: EventReader<MovementAction>,
+    keys: Res<ButtonInput<KeyCode>>,
+    player_controls: Res<PlayerControls>,
+    //mut movement_event_reader: EventReader<MovementAction>,
     mut controllers: Query<(
         &MovementAcceleration,
         &JumpImpulse,
         &mut LinearVelocity,
         Has<Grounded>,
-    )>,
+        &BoundCamera,
+        &mut Transform,
+        //&DesiredDirection,
+    ), Without<Camera>>,
+    cameras: Query<(&Camera, &Transform), With<Camera>>,
 ) {
     // Precision is adjusted so that the example works with
     // both the `f32` and `f64` features. Otherwise you don't need this.
     let delta_time = time.delta_seconds_f64().adjust_precision();
 
-    for event in movement_event_reader.read() {
-        for (movement_acceleration, jump_impulse, mut linear_velocity, is_grounded) in
+    //for event in movement_event_reader.read() {
+        for (movement_acceleration, jump_impulse, mut linear_velocity, is_grounded, camera_entity, mut player_trans) in
             &mut controllers
         {
-            match event {
-                MovementAction::Move(direction) => {
-                    linear_velocity.x += direction.x * movement_acceleration.0 * delta_time;
-                    linear_velocity.z -= direction.y * movement_acceleration.0 * delta_time;
-                }
-                MovementAction::Jump => {
-                    if is_grounded {
-                        linear_velocity.y = jump_impulse.0;
-                    }
-                }
+            let mut velocity = Vec3::ZERO;
+
+            //let local_player_rot = player_trans.local
+
+            let axis = EulerRot::XYZ;
+            let Ok((_, cam_trans)) = cameras.get(camera_entity.0) else {continue;};
+            // let player_rot = transform.rotation.to_euler(axis);
+            // let camera_rot = cam_trans.rotation.to_euler(axis);
+            player_trans.rotation = Quat::from_rotation_y(cam_trans.rotation.to_euler(axis).1);
+
+            player_trans.rotation = Quat::from_rotation_y(cam_trans.rotation.to_euler(EulerRot::YXZ).0);
+
+            let local_z = player_trans.local_z();
+            let forward = -Vec3::new(local_z.x, 0., local_z.z);
+            let right = Vec3::new(local_z.z, 0., -local_z.x);
+
+
+            if keys.any_pressed(player_controls.forward.clone()) {
+                velocity += forward;
+            } if keys.any_pressed(player_controls.back.clone()){
+                velocity -= forward;
+            } if keys.any_pressed(player_controls.left.clone()) {
+                velocity -= right;
+            } if keys.any_pressed(player_controls.right.clone()) {
+                velocity += right;
+            } 
+            if keys.pressed(KeyCode::Space) {
+                velocity += Vec3::Y;
             }
+        
+        
+            velocity = velocity.normalize_or_zero();
+
+
+            //if direction.0 != Vec3::ZERO {
+                //println!("moving towards: {:#}", direction.0);
+                // linear_velocity.x += direction.x * movement_acceleration.0 * delta_time;
+                // linear_velocity.z -= direction.z * movement_acceleration.0 * delta_time;
+                linear_velocity.x = velocity.x * movement_acceleration.0 * delta_time * 10.0;
+                linear_velocity.z = velocity.z * movement_acceleration.0 * delta_time * 10.0;
+
+            //}
+            if is_grounded {
+                linear_velocity.y = velocity.y * jump_impulse.0;
+
+                // if keys.pressed(KeyCode::Space) {
+                //     //velocity += 1.0 * jump_impulse.0;
+                //     linear_velocity.y = 1.0 * jump_impulse.0;
+                // } 
+                //linear_velocity.y = direction.y * jump_impulse.0;
+            }
+            // match event {
+            //     MovementAction::Move(direction) => {
+            //         println!("camera direction: {:#?}", cam_trans);
+            //         linear_velocity.x += direction.x * movement_acceleration.0 * delta_time;
+            //         linear_velocity.z -= direction.y * movement_acceleration.0 * delta_time;
+            //     }
+            //     MovementAction::Jump => {
+            //         if is_grounded {
+            //             linear_velocity.y = jump_impulse.0;
+            //         }
+            //     }
+            // }
         }
-    }
+    //}
 }
 
 /// Applies [`ControllerGravity`] to character controllers.

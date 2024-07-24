@@ -6,36 +6,40 @@ pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<MovementAction>()
-            .add_systems(
-                Update,
-                (
-                    keyboard_input,
-                    gamepad_input,
-                    update_grounded,
-                    apply_gravity,
-                    movement,
-                    apply_movement_damping,
-                )
-                    .chain(),
+        app
+        //.add_event::<MovementAction>()
+        .insert_resource(PlayerControls::default())
+        .add_systems(
+            Update,
+            (
+                //keyboard_input,
+                //gamepad_input,
+                update_grounded,
+                apply_gravity,
+                movement,
+                apply_movement_damping,
             )
-            .add_systems(
-                // Run collision handling after collision detection.
-                //
-                // NOTE: The collision implementation here is very basic and a bit buggy.
-                //       A collide-and-slide algorithm would likely work better.
-                PostProcessCollisions,
-                kinematic_controller_collisions,
-            );
+                .chain(),
+        )
+        .add_systems(
+            // Run collision handling after collision detection.
+            //
+            // NOTE: The collision implementation here is very basic and a bit buggy.
+            //       A collide-and-slide algorithm would likely work better.
+            PostProcessCollisions,
+            kinematic_controller_collisions,
+        );
+        app.add_systems(Update, connect_camera_to_reciever)
+        ;
     }
 }
 
 /// An event sent for a movement input action.
-#[derive(Event)]
-pub enum MovementAction {
-    Move(Vector2),
-    Jump,
-}
+// #[derive(Event)]
+// pub enum MovementAction {
+//     Move(Vector2),
+//     Jump,
+// }
 
 
 
@@ -55,7 +59,8 @@ pub struct CharacterControllerBundle {
     ground_caster: ShapeCaster,
     gravity: ControllerGravity,
     movement: MovementBundle,
-    player_camera: PlayerCamera
+    player_marker: Player,
+    desired_direction: DesiredDirection,
 }
 
 
@@ -91,7 +96,7 @@ impl Default for MovementBundle {
 }
 
 impl CharacterControllerBundle {
-    pub fn new(collider: Collider, gravity: Vector, camera_entity: Entity) -> Self {
+    pub fn new(collider: Collider, gravity: Vector) -> Self {
         // Create shape caster as a slightly smaller version of collider
         let mut caster_shape = collider.clone();
         caster_shape.set_scale(Vector::ONE * 0.99, 10);
@@ -109,7 +114,8 @@ impl CharacterControllerBundle {
             .with_max_time_of_impact(0.2),
             gravity: ControllerGravity(gravity),
             movement: MovementBundle::default(),
-            player_camera: PlayerCamera(camera_entity)
+            player_marker: Player,
+            desired_direction: DesiredDirection::default()
         }
     }
 
@@ -125,28 +131,7 @@ impl CharacterControllerBundle {
     }
 }
 
-/// Sends [`MovementAction`] events based on keyboard input.
-fn keyboard_input(
-    mut movement_event_writer: EventWriter<MovementAction>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-) {
-    let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
-    let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
-    let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
-    let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
 
-    let horizontal = right as i8 - left as i8;
-    let vertical = up as i8 - down as i8;
-    let direction = Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0);
-
-    if direction != Vector2::ZERO {
-        movement_event_writer.send(MovementAction::Move(direction));
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        movement_event_writer.send(MovementAction::Jump);
-    }
-}
 
 
 

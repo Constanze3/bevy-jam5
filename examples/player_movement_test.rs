@@ -2,7 +2,7 @@
 
 use avian3d::{collision::Collider, debug_render::PhysicsDebugPlugin, math::{Scalar, Vector}, prelude::RigidBody, PhysicsPlugins};
 use bevy::prelude::*;
-use bevy_camera_extras::{components::{AttachedTo, FlyCam, Viewer, Watched}, plugins::CameraExtrasPlugin};
+use bevy_camera_extras::{components::{AttachedTo, CameraControls, Viewer, Watched}, plugins::CameraExtrasPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_jam5::player_controller::plugins::*;
 
@@ -13,9 +13,11 @@ fn main() {
         .add_plugins(PhysicsPlugins::default())
         .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
-        // .add_plugins(CameraExtrasPlugin {
-        //     cursor_grabbed_by_default: true
-        // })
+        .add_plugins(CameraExtrasPlugin {
+            cursor_grabbed_by_default: true,
+            keybinds_override: None,
+            movement_settings_override: None,
+        })
 
 
         .add_plugins(WorldInspectorPlugin::default())
@@ -48,17 +50,7 @@ fn setup(
             Name::new("base_plate")
         )
     );
-    // camera
-    let camera = commands.spawn(
-        (
-            Camera3dBundle {
-                transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-                ..default()
-            },
-            FlyCam,
 
-        )
-    ).id();
 
     // Player
     let player = commands.spawn((
@@ -68,13 +60,24 @@ fn setup(
             transform: Transform::from_xyz(0.0, 1.5, 0.0),
             ..default()
         },
-        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0, camera)
+        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
             .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
         Name::new("player"),
     )).id();
 
+    // camera
+    commands.spawn(
+        (
+            Camera3dBundle {
+                transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+                ..default()
+            },
+            CameraControls,
+            AttachedTo(player)
+
+        )
+    );
     // set camera to follow player
-    commands.entity(camera).insert(AttachedTo(player));
 
     // light
     commands.spawn(PointLightBundle {

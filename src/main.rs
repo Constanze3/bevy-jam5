@@ -25,7 +25,7 @@ mod player_controller;
 
 use avian3d::{math::*, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy_camera_extras::{components::{AttachedTo, FlyCam}, plugins::CameraExtrasPlugin};
+use bevy_camera_extras::{components::{AttachedTo, CameraControls}, plugins::CameraExtrasPlugin};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use player_controller::plugins::*;
@@ -40,7 +40,9 @@ fn main() {
             CharacterControllerPlugin,
         ))
         .add_plugins(CameraExtrasPlugin {
-            cursor_grabbed_by_default: true
+            cursor_grabbed_by_default: true,
+            keybinds_override: None,
+            movement_settings_override: None,
         })
         .add_systems(Startup, setup)
         .add_systems(Update, close_on_esc)
@@ -64,16 +66,7 @@ fn setup(
     assets: Res<AssetServer>,
 ) {
 
-    // camera
-    let camera = commands.spawn(
-        (
-            Camera3dBundle {
-                transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-                ..default()
-            },
-            FlyCam,
-        )
-    ).id();
+
 
     // Player
     let player = commands.spawn((
@@ -83,12 +76,21 @@ fn setup(
             transform: Transform::from_xyz(0.0, 1.5, 0.0),
             ..default()
         },
-        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0, camera)
+        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
             .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
     )).id();
 
-    // set camera to follow player
-    commands.entity(camera).insert(AttachedTo(player));
+    // camera
+    commands.spawn(
+        (
+            Camera3dBundle {
+                transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+                ..default()
+            },
+            CameraControls,
+            AttachedTo(player)
+        )
+    );
 
     // A cube to move around
     commands.spawn((
