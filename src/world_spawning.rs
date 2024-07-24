@@ -5,20 +5,34 @@ use bevy::{
 
 use crate::*;
 
-use self::asset_loading::GltfAssets;
+mod on_spawn;
 
-// TODO move this into on_spawn::bicycle
-#[derive(Component)]
-pub struct Bicycle;
+use self::asset_loading::GltfAssets;
+use on_spawn::*;
+
+// Marker components can be attached with the SpawnHook based on a function that is provided with the
+// name of the object.
+//
+// Each object is an empty entity with a SpatialBundle that has one or more children (primitives)
+// that contain meshes and materials.
+//
+// The loading of associated data can be done by querying the entityies that just got the marker
+// component added.
+//
+// The loading is determined by the order of nodes in the gltf (glb) file i.e. by the order of
+// objects in Blender. This is important because for example the terrain should be loaded before
+// attaching dynamic rigidbodies to props.
 
 pub struct SpawnWorldPlugin;
 
 impl Plugin for SpawnWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(GameState::Playing),
-            (spawn_before_world, spawn_world, spawn_after_world),
-        );
+        app.add_plugins(on_spawn::plugin)
+            .add_systems(
+                OnEnter(GameState::Playing),
+                (spawn_world, spawn_after_world).chain(),
+            )
+            .init_resource::<SpawnHook>();
     }
 }
 
@@ -40,20 +54,6 @@ impl Default for SpawnHook {
 
         return Self(hook);
     }
-}
-
-#[derive(Resource)]
-pub struct Map(Entity);
-
-#[derive(Component)]
-pub struct MapElement;
-
-pub fn spawn_before_world(mut commands: Commands) {
-    let map_entity = commands
-        .spawn((Name::new("Map"), SpatialBundle::default()))
-        .id();
-
-    commands.insert_resource(Map(map_entity));
 }
 
 pub fn spawn_world(
