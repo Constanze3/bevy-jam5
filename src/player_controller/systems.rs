@@ -1,6 +1,8 @@
 use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, math::VectorSpace, prelude::*};
-use bevy_camera_extras::components::AttachedTo;
+use bevy_camera_extras::{components::AttachedTo};
+use bevy_camera_extras::resources::RestraintsToggled;
+
 
 use super::*;
 
@@ -249,6 +251,7 @@ pub fn movement(
     keys: Res<ButtonInput<KeyCode>>,
     player_controls: Res<PlayerControls>,
     player_settings: Res<PlayerSettings>,
+    camera_locked_state_check: Option<Res<RestraintsToggled>>,
     //mut movement_event_reader: EventReader<MovementAction>,
     mut controllers: Query<(
         &MovementAcceleration,
@@ -261,6 +264,15 @@ pub fn movement(
     ), Without<Camera>>,
     cameras: Query<(&Camera, &Transform), With<Camera>>,
 ) {
+    match camera_locked_state_check {
+        Some(camera_lock_state) => {
+            match camera_lock_state.0 {
+                false => return,
+                true => {},
+            }
+        },
+        None => {}
+    }
     // Precision is adjusted so that the example works with
     // both the `f32` and `f64` features. Otherwise you don't need this.
     let delta_time = time.delta_seconds_f64().adjust_precision();

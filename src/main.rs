@@ -27,7 +27,6 @@ fn main() {
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
-            //PlayerPlugin,
             CubemapFactoryPlugin,
             CharacterControllerPlugin,
         ))
