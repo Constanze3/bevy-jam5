@@ -1,3 +1,4 @@
+mod asset_loading;
 mod cameras;
 mod car_controller;
 mod cubemap_factory;
@@ -5,7 +6,9 @@ mod player_controller;
 mod resources;
 mod simulation_state;
 mod utils;
+mod world_spawning;
 
+use asset_loading::AssetLoaderPlugin;
 use avian3d::{math::*, prelude::*};
 use bevy::{
     core_pipeline::{prepass::NormalPrepass, Skybox},
@@ -16,6 +19,7 @@ use bevy_camera_extras::{
     plugins::CameraExtrasPlugin,
 };
 
+use bevy_flycam::PlayerPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
 use player_controller::plugins::*;
@@ -23,6 +27,7 @@ use player_controller::plugins::*;
 use cubemap_factory::*;
 use resources::*;
 use simulation_state::*;
+use world_spawning::SpawnWorldPlugin;
 //use plugin::*;
 
 fn main() {
@@ -33,13 +38,15 @@ fn main() {
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
-            //PlayerPlugin,
+            PlayerPlugin,
             CubemapFactoryPlugin,
-            CharacterControllerPlugin,
+            // CharacterControllerPlugin,
             OutlinePostProcessPlugin,
+            AssetLoaderPlugin,
+            SpawnWorldPlugin,
         ))
+        .init_state::<GameState>()
         .insert_resource(Msaa::Off)
-        .add_systems(Startup, (setup_world).chain())
         .init_state::<TestSkyboxState>()
         .add_systems(
             Update,
@@ -53,6 +60,13 @@ fn main() {
         //.add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
         .run();
+}
+
+#[derive(States, Clone, PartialEq, Eq, Hash, Debug, Default)]
+enum GameState {
+    #[default]
+    Loading,
+    Playing,
 }
 
 #[derive(States, Clone, PartialEq, Eq, Hash, Debug, Default)]
