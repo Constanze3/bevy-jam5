@@ -1,73 +1,85 @@
-//! A basic implementation of a character controller for a kinematic rigid body.
-//!
-//! This showcases the following:
-//!
-//! - Basic directional movement and jumping
-//! - Support for both keyboard and gamepad input
-//! - A configurable maximum slope angle
-//! - Collision response for kinematic bodies
-//! - Loading a platformer environment from a glTF
-//!
-//! The character controller logic is contained within the `plugin` module.
-//!
-//! For a dynamic character controller, see the `dynamic_character_3d` example.
-//!
-//! ## Warning
-//!
-//! Note that this is *not* intended to be a fully featured character controller,
-//! and the collision logic is quite basic.
-//!
-//! For a better solution, consider implementing a "collide-and-slide" algorithm,
-//! or use an existing third party character controller plugin like Bevy Tnua
-//! (a dynamic character controller).
-
+mod cameras;
+mod car_controller;
+mod cubemap_factory;
+mod resources;
+mod simulation_state;
+mod utils;
 mod player_controller;
 
 use avian3d::{math::*, prelude::*};
+use bevy::{core_pipeline::Skybox, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_camera_extras::{components::{AttachedTo, CameraControls}, plugins::CameraExtrasPlugin};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use player_controller::plugins::*;
 
+use cubemap_factory::*;
+use resources::*;
+use simulation_state::*;
 //use plugin::*;
 
 fn main() {
     App::new()
+        .insert_resource(MovementSettings::default())
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
+            SimulationStatePlugin,
+            WorldInspectorPlugin::new(),
+            //PlayerPlugin,
+            CubemapFactoryPlugin,
             CharacterControllerPlugin,
         ))
+        .add_systems(Startup, (setup_world).chain())
+        .init_state::<TestSkyboxState>()
+        .add_systems(
+            Update,
+            test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
+        )
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
             keybinds_override: None,
             movement_settings_override: None,
         })
-        .add_systems(Startup, setup)
-        .add_systems(Update, close_on_esc)
+        //.add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
-
-        .add_plugins(WorldInspectorPlugin::default())
 
         .run();
 }
 
-fn close_on_esc(keys: Res<ButtonInput<KeyCode>>, mut exit: EventWriter<AppExit>) {
-    if keys.just_pressed(KeyCode::Escape) {
-        exit.send(AppExit::Success);
-    }
+#[derive(States, Clone, PartialEq, Eq, Hash, Debug, Default)]
+enum TestSkyboxState {
+    #[default]
+    Waiting,
+    Done,
 }
-fn setup(
+
+/// This system adds a skybox to the camera after it is loaded.
+/// `TODO` properly initialize skybox instead.
+fn test_skybox(
+    cameras: Query<Entity, With<Camera>>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    //mut q_window: Query<&mut Window>,
+    mut cubemap_factory: ResMut<CubemapFactory>,
     assets: Res<AssetServer>,
+    images: Res<Assets<Image>>,
+    mut next_state: ResMut<NextState<TestSkyboxState>>,
 ) {
+    if cameras.is_empty() {
+        return;
+    }
+    println!("camera count: {:#?}", cameras.iter().len());
+    commands
+        .entity(cameras.get_single().unwrap())
+        .insert(Skybox {
+            image: cubemap_factory.load_from_folder("sky", assets, images),
+            brightness: 1000.0,
+        });
 
+    next_state.set(TestSkyboxState::Done);
+}
 
-
+fn setup_world(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
     // Player
     let player = commands.spawn((
         PbrBundle {
@@ -115,6 +127,11 @@ fn setup(
         RigidBody::Static,
     ));
 
+    commands.insert_resource(AmbientLight {
+        color: Color::srgb_u8(182, 205, 214),
+        brightness: 500.0,
+    });
+
     commands.insert_resource(AmbientLight::default());
 
     commands.spawn(DirectionalLightBundle {
@@ -125,7 +142,7 @@ fn setup(
         },
         transform: Transform {
             translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 4.),
+            rotation: Quat::from_euler(EulerRot::XYZ, 4.0, -0.7, 0.0),
             ..default()
         },
         ..default()
@@ -135,16 +152,16 @@ fn setup(
 // #[derive(Component)]
 // struct MainCamera;
 
-#[derive(Resource)]
-struct MovementSettings {
-    sensitivity: f32,
-}
+// #[derive(Resource)]
+// struct MovementSettings {
+//     sensitivity: f32,
+// }
 
-impl Default for MovementSettings {
-    fn default() -> Self {
-        return Self { sensitivity: 0.1 };
-    }
-}
+// impl Default for MovementSettings {
+//     fn default() -> Self {
+//         return Self { sensitivity: 0.1 };
+//     }
+// }
 
 // fn camera_control(
 //     //mut q_camera: Query<&mut Transform, With<MainCamera>>,
