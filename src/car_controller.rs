@@ -29,7 +29,6 @@ pub enum MovementAction {
     Turn(Scalar),
 }
 
-// TODO: flip CarDimensions and CarProperties to Components
 struct CarDimensions {
     pub length: f32,
     pub width: f32,
@@ -39,19 +38,22 @@ struct CarDimensions {
 struct CarProperties {
     pub dimensions: CarDimensions,
     pub starting_pos: Transform,
-    pub float_height: f32,
-    pub float_bob_height: f32,
 }
 
 impl Default for CarProperties {
     fn default() -> Self {
         return Self {
             dimensions: CarDimensions { length: 2.5, width: 1.5, height: 0.75 },
-            float_height: 1.0,
-            float_bob_height: 0.25,
             starting_pos: Transform::from_xyz(0.0, 0.5, 0.0),
         };
     }
+}
+
+#[derive(Component)]
+struct CarBehaviour {
+    float_height: Scalar,
+    float_amplitude: Scalar,
+    float_period: Scalar,
 }
 
 #[derive(Component)]
@@ -83,6 +85,7 @@ pub struct MovementBundle {
     acceleration: MovementAcceleration,
     damping: MovementDampingFactor,
     float_impulse: FloatImpulse,
+    behaviour: CarBehaviour,
 }
 
 impl MovementBundle {
@@ -91,18 +94,30 @@ impl MovementBundle {
         angular_acceleration: Scalar,
         damping: Scalar,
         float_impulse: Scalar,
+        float_height: Scalar,
+        float_amplitude: Scalar,
+        float_period: Scalar,
     ) -> Self {
         Self {
             acceleration: MovementAcceleration { linear: linear_acceleration, angular: angular_acceleration },
             damping: MovementDampingFactor(damping),
             float_impulse: FloatImpulse(float_impulse),
+            behaviour: CarBehaviour { float_height, float_amplitude, float_period },
         }
     }
 }
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(30.0, 20.0, 0.9, 10.0)
+        Self::new(
+            30.0,
+            20.0,
+            0.9,
+            10.0,
+            1.0,
+            0.25,
+            3.0
+        )
     }
 }
 
@@ -125,8 +140,11 @@ impl CarControllerBundle {
         angular_acceleration: Scalar,
         damping: Scalar,
         float_impulse: Scalar,
+        float_height: Scalar,
+        float_amplitude: Scalar,
+        float_period: Scalar,
     ) -> Self {
-        self.movement = MovementBundle::new(linear_acceleration, angular_acceleration, damping, float_impulse);
+        self.movement = MovementBundle::new(linear_acceleration, angular_acceleration, damping, float_impulse, float_height, float_amplitude, float_period);
         self
     }
 }
@@ -146,7 +164,7 @@ fn setup_car(
             ..default()
         },
         CarControllerBundle::new(Collider::cuboid(props.dimensions.width, props.dimensions.height, props.dimensions.length))
-            .with_movement(30.0, 20.0, 0.92, 20.0),
+            .with_movement(30.0, 20.0, 0.92, 20.0, 1.0, 0.25, 3.0),
         Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
         Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
         GravityScale(2.0),
@@ -232,27 +250,34 @@ fn movement(
 fn make_car_float(
     time: Res<Time>,
     mut controllers: Query<(
+        &CarBehaviour,
         &FloatImpulse,
         &mut LinearVelocity,
     )>,
-    q_car_transform: Query<&Transform, With<CarController>>,
+    mut q_car_transform: Query<&mut Transform, With<CarController>>,
     spatial_query: SpatialQuery
 ) {
-    let car_transform = q_car_transform.single();
+    let mut car_transform = q_car_transform.single_mut();
     let car_props = CarProperties::default();
 
-    if let Some(hit) = spatial_query.cast_ray(
-        car_transform.translation - (0.01 + Vec3::Y * car_props.dimensions.height / 2.0), // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
-        Dir3::NEG_Y,
-        car_props.float_bob_height + car_props.float_height,
-        true,
-        SpatialQueryFilter::default(),
-    ) {
-        for (float_impulse, mut linear_velocity) in &mut controllers
+        for (behaviour, float_impulse, mut linear_velocity) in &mut controllers
         {
-            let proportional_to_distance = 1.0 - sigmoid((hit.time_of_impact - car_props.float_height) / car_props.float_bob_height);
-            println!("Distance: {:?} -- Urgency: {:?}", hit.time_of_impact, proportional_to_distance);
-            linear_velocity.y += proportional_to_distance * float_impulse.0 * time.delta_seconds();
+            if let Some(hit) = spatial_query.cast_ray(
+                car_transform.translation - (0.01 + Vec3::Y * car_props.dimensions.height / 2.0), // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
+                Dir3::NEG_Y,
+                2.0 * behaviour.float_amplitude + behaviour.float_height,
+                true,
+                SpatialQueryFilter::default(),
+            ) {
+
+            let desired_height = f32::sin(time.elapsed_seconds() * behaviour.float_period) * behaviour.float_amplitude + behaviour.float_height;
+            let actual_height = hit.time_of_impact;
+            
+            car_transform.translation.y = desired_height;
+
+            // let proportional_to_distance = 1.0 - sigmoid((hit.time_of_impact - car_props.float_height) / car_props.float_bob_height);
+            // println!("Distance: {:?} -- Urgency: {:?}", hit.time_of_impact, proportional_to_distance);
+            // linear_velocity.y += proportional_to_distance * float_impulse.0 * time.delta_seconds();
         }
     }
 }

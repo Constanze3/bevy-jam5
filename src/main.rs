@@ -15,6 +15,7 @@ use cubemap_factory::*;
 use resources::*;
 use simulation_state::*;
 use car_controller::*;
+use cameras::*;
 
 fn main() {
     App::new()
@@ -28,7 +29,7 @@ fn main() {
             CarControllerPlugin,
             CubemapFactoryPlugin,
         ))
-        .add_systems(Startup, (setup_world).chain())
+        .add_systems(Startup, (setup_world, setup_camera).chain())
         .init_state::<TestSkyboxState>()
         .add_systems(
             Update,
