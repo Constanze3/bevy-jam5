@@ -16,12 +16,7 @@ use on_spawn::*;
 // Each object is an empty entity with a SpatialBundle that has one or more children (primitives)
 // that contain meshes and materials.
 //
-// The loading of associated data can be done by querying the entityies that just got the marker
-// component added.
-//
-// The loading is determined by the order of nodes in the gltf (glb) file i.e. by the order of
-// objects in Blender. This is important because for example the terrain should be loaded before
-// attaching dynamic rigidbodies to props.
+// The loading of associated data can be done by querying the marker components.
 
 pub struct SpawnWorldPlugin;
 
@@ -43,12 +38,16 @@ pub struct SpawnHook(Hook);
 
 impl Default for SpawnHook {
     fn default() -> Self {
-        let hook: Hook = Box::new(|name, commands| match name {
-            "Bicycle" => {
-                commands.insert(Bicycle);
-            }
-            _ => {
-                commands.insert(MapElement);
+        let hook: Hook = Box::new(|name, commands| {
+            let class = name.split('.').next().unwrap_or(name);
+
+            match class {
+                "Bicycle" => {
+                    commands.insert(Bicycle);
+                }
+                _ => {
+                    commands.insert(MapElement);
+                }
             }
         });
 
