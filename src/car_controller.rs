@@ -86,10 +86,9 @@ pub struct PID {
 impl Default for PID {
     fn default() -> Self {
         Self { 
-            // TODO: Figure out good coefficients
             kp: 1.0,
-            ki: 1.0, // 0.1,
-            kd: 1.0, // 0.01,
+            ki: 1.0,
+            kd: 1.0,
 
             integral: 0.0,
             previous_error: 0.0,
