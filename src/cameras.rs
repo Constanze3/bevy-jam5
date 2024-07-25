@@ -10,7 +10,7 @@ pub fn setup_camera(mut commands: Commands) {
     commands.spawn((
         MainCamera,
         Camera3dBundle {
-            transform: Transform::from_xyz(5.0, 5.0, 5.0),
+            transform: Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Dir3::Y),
             ..default()
         },
     ));

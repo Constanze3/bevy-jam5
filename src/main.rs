@@ -28,7 +28,8 @@ use cubemap_factory::*;
 use resources::*;
 use simulation_state::*;
 use world_spawning::SpawnWorldPlugin;
-//use plugin::*;
+use car_controller::*;
+use cameras::*;
 
 fn main() {
     App::new()
@@ -39,6 +40,7 @@ fn main() {
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
             // PlayerPlugin,
+            CarControllerPlugin,
             CubemapFactoryPlugin,
             CharacterControllerPlugin,
             OutlinePostProcessPlugin,
