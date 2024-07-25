@@ -4,6 +4,7 @@ mod cubemap_factory;
 mod plugin;
 mod resources;
 mod simulation_state;
+mod ui;
 mod utils;
 
 use avian3d::{math::*, prelude::*};
@@ -11,18 +12,24 @@ use bevy::{core_pipeline::Skybox, prelude::*};
 use bevy_flycam::prelude::PlayerPlugin;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use cameras::*;
+use car_controller::*;
 use cubemap_factory::*;
+use plugin::CharacterControllerPlugin;
 use resources::*;
 use simulation_state::*;
-use car_controller::*;
-use cameras::*;
+use ui::pause_menu::plugins::PauseMenuPlugin;
 
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
+        .init_resource::<MovementSettings>()
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
+            CharacterControllerPlugin,
+            // TODO: fix PauseMenuPlugin
+            // PauseMenuPlugin,
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
             // PlayerPlugin,
@@ -30,11 +37,6 @@ fn main() {
             CubemapFactoryPlugin,
         ))
         .add_systems(Startup, (setup_world, setup_camera).chain())
-        .init_state::<TestSkyboxState>()
-        .add_systems(
-            Update,
-            test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
-        )
         .run();
 }
 
