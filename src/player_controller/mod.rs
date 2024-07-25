@@ -1,10 +1,11 @@
+mod components;
+mod interaction;
 pub mod plugins;
 pub mod resources;
 mod systems;
-mod components;
-
 
 use components::*;
+pub use interaction::*;
+use plugins::*;
 use resources::*;
 use systems::*;
-use plugins::*;

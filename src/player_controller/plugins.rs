@@ -1,37 +1,36 @@
+use super::*;
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
-use super::*;
 
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app
-        //.add_event::<MovementAction>()
-        .insert_resource(PlayerControls::default())
-        .insert_resource(PlayerSettings::default())
-        .add_systems(
-            Update,
-            (
-                //keyboard_input,
-                //gamepad_input,
-                update_grounded,
-                apply_gravity,
-                movement,
-                apply_movement_damping,
+        app.add_plugins(interaction::plugin)
+            //.add_event::<MovementAction>()
+            .insert_resource(PlayerControls::default())
+            .insert_resource(PlayerSettings::default())
+            .add_systems(
+                Update,
+                (
+                    //keyboard_input,
+                    //gamepad_input,
+                    update_grounded,
+                    apply_gravity,
+                    movement,
+                    apply_movement_damping,
+                )
+                    .chain(),
             )
-                .chain(),
-        )
-        .add_systems(
-            // Run collision handling after collision detection.
-            //
-            // NOTE: The collision implementation here is very basic and a bit buggy.
-            //       A collide-and-slide algorithm would likely work better.
-            PostProcessCollisions,
-            kinematic_controller_collisions,
-        );
-        app.add_systems(Update, connect_camera_to_reciever)
-        ;
+            .add_systems(
+                // Run collision handling after collision detection.
+                //
+                // NOTE: The collision implementation here is very basic and a bit buggy.
+                //       A collide-and-slide algorithm would likely work better.
+                PostProcessCollisions,
+                kinematic_controller_collisions,
+            );
+        app.add_systems(Update, connect_camera_to_reciever);
     }
 }
 
@@ -41,8 +40,6 @@ impl Plugin for CharacterControllerPlugin {
 //     Move(Vector2),
 //     Jump,
 // }
-
-
 
 /// The maximum angle a slope can have for a character controller
 /// to be able to climb and jump. If the slope is steeper than this angle,
@@ -63,7 +60,6 @@ pub struct CharacterControllerBundle {
     player_marker: Player,
     desired_direction: DesiredDirection,
 }
-
 
 /// A bundle that contains components for character movement.
 #[derive(Bundle)]
@@ -116,7 +112,7 @@ impl CharacterControllerBundle {
             gravity: ControllerGravity(gravity),
             movement: MovementBundle::default(),
             player_marker: Player,
-            desired_direction: DesiredDirection::default()
+            desired_direction: DesiredDirection::default(),
         }
     }
 
@@ -131,9 +127,3 @@ impl CharacterControllerBundle {
         self
     }
 }
-
-
-
-
-
-

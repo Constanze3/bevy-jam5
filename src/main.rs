@@ -1,17 +1,21 @@
 mod cameras;
 mod car_controller;
 mod cubemap_factory;
+mod player_controller;
 mod resources;
 mod simulation_state;
 mod utils;
-mod player_controller;
 
 use avian3d::{math::*, prelude::*};
 use bevy::{core_pipeline::Skybox, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy_camera_extras::{components::{AttachedTo, CameraControls}, plugins::CameraExtrasPlugin};
+use bevy_camera_extras::{
+    components::{AttachedTo, CameraControls},
+    plugins::CameraExtrasPlugin,
+};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_jam5::player_controller::{Hand, UpPickable};
 use player_controller::plugins::*;
 
 use cubemap_factory::*;
@@ -29,6 +33,7 @@ fn main() {
             WorldInspectorPlugin::new(),
             CubemapFactoryPlugin,
             CharacterControllerPlugin,
+            PhysicsDebugPlugin::default(),
         ))
         .add_systems(Startup, (setup_world).chain())
         .init_state::<TestSkyboxState>()
@@ -43,7 +48,6 @@ fn main() {
         })
         //.add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
-
         .run();
 }
 
@@ -78,33 +82,50 @@ fn test_skybox(
     next_state.set(TestSkyboxState::Done);
 }
 
-fn setup_world(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn setup_world(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     // Player
-    let player = commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
-            material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-            transform: Transform::from_xyz(0.0, 1.5, 0.0),
-            ..default()
-        },
-        CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
-            .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
-    )).id();
-
-    // camera
-    commands.spawn(
-        (
-            Camera3dBundle {
-                transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+    let player = commands
+        .spawn((
+            PbrBundle {
+                mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
+                material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
+                transform: Transform::from_xyz(0.0, 1.5, 0.0),
                 ..default()
             },
-            CameraControls,
-            AttachedTo(player)
-        )
-    );
+            CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
+                .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Name::new("Hand"),
+                SpatialBundle {
+                    transform: Transform::from_xyz(1.0, 0.0, 0.0),
+                    ..default()
+                },
+                Hand,
+            ));
+        })
+        .id();
+
+    // camera
+    commands.spawn((
+        Camera3dBundle {
+            transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },
+        CameraControls,
+        AttachedTo(player),
+    ));
 
     // A cube to move around
     commands.spawn((
+        UpPickable,
+        Name::new("Cube"),
         RigidBody::Dynamic,
         Collider::cuboid(1.0, 1.0, 1.0),
         PbrBundle {
@@ -122,7 +143,7 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>, mut meshes: Res
             transform: Transform::default(),
             ..default()
         },
-        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
         RigidBody::Static,
     ));
 
