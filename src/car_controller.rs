@@ -1,21 +1,182 @@
 use bevy::prelude::*;
-use avian3d::prelude::*;
+use avian3d::{math::*, prelude::*};
 
-use super::{cameras::*, resources::*, simulation_state::*, utils::*};
-
-#[derive(Component)]
-struct Car;
+use super::{cameras::*, simulation_state::*};
 
 pub struct CarControllerPlugin;
 
 impl Plugin for CarControllerPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_event::<MovementAction>()
             .add_systems(Startup, setup_car)
             .add_systems(Update, (
+                keyboard_input.run_if(in_state(SimulationState::Running)),
+                movement.run_if(in_state(SimulationState::Running)),
+                apply_movement_damping,
+                make_car_float,
                 camera_follow_car,
-                move_car,
-            ).run_if(in_state(SimulationState::Running)));
+            ).chain());
+    }
+}
+
+#[derive(Event)]
+pub enum MovementAction {
+    Move(Scalar),
+    Turn(Scalar),
+}
+
+struct CarDimensions {
+    pub length: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+struct CarProperties {
+    pub dimensions: CarDimensions,
+    pub starting_pos: Transform,
+}
+
+impl Default for CarProperties {
+    fn default() -> Self {
+        return Self {
+            dimensions: CarDimensions { length: 2.5, width: 1.5, height: 0.75 },
+            starting_pos: Transform::from_xyz(0.0, 0.5, 0.0),
+        };
+    }
+}
+
+#[derive(Component)]
+struct CarBehaviour {
+    float_height: Scalar,
+    float_amplitude: Scalar,
+    float_period: Scalar,
+}
+
+#[derive(Component)]
+pub struct CarController;
+
+#[derive(Bundle)]
+pub struct CarControllerBundle {
+    car_controller: CarController,
+    rigid_body: RigidBody,
+    collider: Collider,
+    locked_axes: LockedAxes,
+    movement: MovementBundle,
+}
+
+#[derive(Component)]
+pub struct MovementAcceleration {
+    linear: Scalar,
+    angular: Scalar,
+}
+
+#[derive(Component)]
+pub struct MovementDampingFactor(Scalar);
+
+#[derive(Component)]
+pub struct PID {
+    kp: f32,
+    ki: f32,
+    kd: f32,
+    integral: f32,
+    previous_error: f32,
+}
+
+impl Default for PID {
+    fn default() -> Self {
+        Self { 
+            kp: 1.0,
+            ki: 1.0,
+            kd: 1.0,
+
+            integral: 0.0,
+            previous_error: 0.0,
+        }
+    }
+}
+
+impl PID {
+    // Desired_value should probably be a set point in space, instead of chasing a 
+    // moving target, but assuming it's a continuous value in time... it should be somewhat fine.
+    fn compute(&mut self, desired_value: f32, actual_value: f32, delta_time: f32) -> f32 {
+        let error = desired_value - actual_value;
+        self.integral += error * delta_time;
+        let derivative = (error - self.previous_error) / delta_time;
+        self.previous_error = error;
+        return self.kp * error + self.ki * self.integral + self.kd * derivative;
+    }
+}
+
+#[derive(Bundle)]
+pub struct MovementBundle {
+    acceleration: MovementAcceleration,
+    damping: MovementDampingFactor,
+    behaviour: CarBehaviour,
+    pid: PID,
+}
+
+impl MovementBundle {
+    pub const fn new(
+        linear_acceleration: Scalar,
+        angular_acceleration: Scalar,
+        damping: Scalar,
+        float_height: Scalar,
+        float_amplitude: Scalar,
+        float_period: Scalar,
+        pid: PID,
+    ) -> Self {
+        Self {
+            acceleration: MovementAcceleration { linear: linear_acceleration, angular: angular_acceleration },
+            damping: MovementDampingFactor(damping),
+            behaviour: CarBehaviour { 
+                float_height, 
+                float_amplitude, 
+                float_period, 
+            },
+            pid,
+        }
+    }
+}
+
+impl Default for MovementBundle {
+    fn default() -> Self {
+        Self::new(
+            30.0,
+            20.0,
+            0.9,
+            1.0,
+            0.5,
+            3.0,
+            PID::default(),
+        )
+    }
+}
+
+impl CarControllerBundle {
+    pub fn new(collider: Collider) -> Self {
+        Self {
+            car_controller: CarController,
+            rigid_body: RigidBody::Dynamic,
+            collider,
+            locked_axes: LockedAxes::new()
+                .lock_rotation_x()
+                .lock_rotation_z(),
+            movement: MovementBundle::default(),
+        }
+    }
+
+    pub fn with_movement(
+        mut self,
+        linear_acceleration: Scalar,
+        angular_acceleration: Scalar,
+        damping: Scalar,
+        float_height: Scalar,
+        float_amplitude: Scalar,
+        float_period: Scalar,
+    ) -> Self {
+        self.movement = MovementBundle::new(linear_acceleration, angular_acceleration, damping, float_height, float_amplitude, float_period, PID::default());
+        self
     }
 }
 
@@ -23,129 +184,134 @@ fn setup_car(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut q_camera: Query<&mut Transform, With<MainCamera>>,
 ) {
+    let props = CarProperties::default();
+
     commands.spawn((
-        Car,
-        RigidBody::Kinematic,
-        Collider::cuboid(1.25, 1.0, 2.5),
-        Mass(2000.0),
-        ExternalForce::ZERO,
-        LinearVelocity::ZERO,
-        LinearDamping(10.0),
-        AngularVelocity::ZERO,
-        AngularDamping(10.0),
         PbrBundle {
-            mesh: meshes.add(Cuboid::new(1.25, 1.0, 2.5)),
+            mesh: meshes.add(Cuboid::new(props.dimensions.width, props.dimensions.height, props.dimensions.length)),
             material: materials.add(Color::srgb_u8(124, 144, 255)),
-            transform: Transform::from_xyz(100.0, 1.0, 100.0),
+            transform: props.starting_pos,
             ..default()
         },
+        CarControllerBundle::new(Collider::cuboid(props.dimensions.width, props.dimensions.height, props.dimensions.length))
+            .with_movement(30.0, 20.0, 0.92, 1.5, 0.75, 2.5),
+        Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
+        Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
+        GravityScale(2.0),
     ));
-
-    // Ensure the existing camera looks at the car
-    if let Ok(mut camera_transform) = q_camera.get_single_mut() {
-        let car_position = Vec3::new(0.0, 4.0, 0.0);
-        let follow_distance = 15.0;
-        let follow_height = 20.0;
-
-        // Calculate desired camera position
-        let mut desired_camera_position = car_position - Vec3::Z * follow_distance;
-        desired_camera_position.y += follow_height;
-
-        camera_transform.translation = desired_camera_position;
-        camera_transform.look_at(car_position, Vec3::Y);
-    }    
 }
 
+// TODO: Replace me with a 3rd person camera
 fn camera_follow_car(
-    q_car: Query<&Transform, With<Car>>,
-    mut q_camera: Query<&mut Transform, (With<MainCamera>, Without<Car>)>,
+    q_car: Query<&Transform, With<CarController>>,
+    q_car_behaviour: Query<&CarBehaviour>,
+    mut q_camera: Query<&mut Transform, (With<MainCamera>, Without<CarController>)>,
 ) {
+    let car_behaviour = q_car_behaviour.single();
+
     if let Ok(car_transform) = q_car.get_single() {
         if let Ok(mut camera_transform) = q_camera.get_single_mut() {
             let car_position = car_transform.translation;
             let car_forward = car_transform.forward();
 
             // Camera should follow the car from above and slightly behind it
-            let follow_distance = 5.0;
+            let follow_distance = 10.0;
             let follow_height = 10.0;
 
-            // Calculate desired camera position behind the car
-            let mut desired_camera_position = car_position - car_forward * follow_distance;
-            desired_camera_position.y += follow_height;
-
-            // Smoothly move the camera to the desired position
-            camera_transform.translation = desired_camera_position;
-
-            // Make the camera look at the car with a slight downward angle
-            camera_transform.look_at(car_position, Vec3::Y);
+            let car_middle_position = Vec3 { x: car_position.x, y: car_behaviour.float_height, z: car_position.z };
+            camera_transform.translation = car_middle_position - car_forward * follow_distance + Vec3::Y * follow_height;
+            camera_transform.look_at(car_middle_position, Vec3::Y);
         }
     }
 }
 
-fn move_car(
-    mut q_car_velocity: Query<(&mut LinearVelocity, &mut AngularVelocity), With<Car>>,
-    q_car_transform: Query<&Transform, With<Car>>,
+fn keyboard_input(
+    mut movement_event_writer: EventWriter<MovementAction>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    movement_settings: Res<MovementSettings>,
 ) {
-    // let (mut transform, mut global_transform) = q_car_transform.single_mut();
-    let (mut linear_velocity, mut angular_velocity) = q_car_velocity.single_mut();
+    let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
+    let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
+    let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
+    let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
+
+    let linear_movement = (up as i8 - down as i8) as Scalar;
+    let angular_movement = (left as i8 - right as i8) as Scalar;
+
+    if linear_movement != 0.0 {
+        movement_event_writer.send(MovementAction::Move(linear_movement));
+    }
+    if angular_movement != 0.0 {
+        movement_event_writer.send(MovementAction::Turn(angular_movement));
+    }
+}
+
+fn movement(
+    time: Res<Time>,
+    mut movement_event_reader: EventReader<MovementAction>,
+    mut controllers: Query<(
+        &MovementAcceleration,
+        &mut LinearVelocity,
+        &mut AngularVelocity,
+    )>,
+    q_car_transform: Query<&Transform, With<CarController>>,
+) {
     let car_transform = q_car_transform.single();
+    let car_forward = car_transform.forward();
 
-    // Calculate forward direction of the car
-    let forward = to_vec(car_transform.forward()); // Direction the cube is facing
-    // let right = to_vec(car_transform.right()); // Right direction of the cube
-    
-    let forward_velocity = forward * movement_settings.car_drive_acceleration;
+    for event in movement_event_reader.read() {
+        for (acceleration, mut linear_velocity, mut angular_velocity) in
+            &mut controllers
+        {
+            match event {
+                MovementAction::Move(speed) => {
+                    linear_velocity.x += car_forward.x * speed * acceleration.linear * time.delta_seconds();
+                    linear_velocity.z += car_forward.z * speed * acceleration.linear * time.delta_seconds();
+                }
+                MovementAction::Turn(speed) => {
+                    angular_velocity.y += speed * acceleration.angular * time.delta_seconds();
+                }
+            }
+        }
+    }
+}
 
-    // Determine movement direction based on input
-    let mut accelerating = false;
-    if keyboard_input.pressed(KeyCode::KeyW) {
-        accelerating = true;
-        linear_velocity.x = forward_velocity.x;
-        linear_velocity.y = forward_velocity.y;
-        linear_velocity.z = forward_velocity.z;
-    }
-    if keyboard_input.pressed(KeyCode::KeyS) {
-        accelerating = true;
-        linear_velocity.x = -forward_velocity.x;
-        linear_velocity.y = -forward_velocity.y;
-        linear_velocity.z = -forward_velocity.z;
-    }
-    if !accelerating {
-        linear_velocity.x = 0.0;
-        linear_velocity.y = 0.0;
-        linear_velocity.z = 0.0;
-    }
+fn make_car_float(
+    time: Res<Time>,
+    mut controllers: Query<(
+        &CarBehaviour,
+        &mut PID,
+        &mut LinearVelocity,
+    )>,
+    q_car_transform: Query<&Transform, With<CarController>>,
+    spatial_query: SpatialQuery
+) {
+    let car_transform = q_car_transform.single();
+    let car_props = CarProperties::default();
 
-    // Determine rotational momentum
-    let mut turning = false;
-    if keyboard_input.pressed(KeyCode::KeyA) {
-        turning = true;
-        angular_velocity.y = movement_settings.car_turn_acceleration; // Rotate counter-clockwise
-    }
-    if keyboard_input.pressed(KeyCode::KeyD) {
-        turning = true;
-        angular_velocity.y = -movement_settings.car_turn_acceleration; // Rotate clockwise
-    }
-    if !turning {
-        angular_velocity.y = 0.0;
-    }
+    for (behaviour, mut pid, mut linear_velocity) in &mut controllers
+    {
+        // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
+        let ray_origin = car_transform.translation - (0.01 + Vec3::Y * car_props.dimensions.height / 2.0);
 
-    // // Move the car in the direction it is facing
-    // if direction.length() > 0.0 {
-    //     // Normalize the direction vector
-    //     let normalized_direction = direction.normalize();
-        
-    //     // Calculate the movement vector based on the car's current orientation
-    //     let move_vector = if normalized_direction.dot(forward) > 0.0 {
-    //         forward * normalized_direction.dot(forward) + right * normalized_direction.dot(right)
-    //     } else {
-    //         -forward * normalized_direction.dot(forward) + -right * normalized_direction.dot(right)
-    //     };
+        if let Some(hit) = spatial_query.cast_ray(
+            ray_origin,
+            Dir3::NEG_Y,
+            2.0 * behaviour.float_amplitude + behaviour.float_height,
+            true,
+            SpatialQueryFilter::default(),
+        ) {
+            let desired_height = f32::sin(time.elapsed_seconds() * behaviour.float_period) * behaviour.float_amplitude + behaviour.float_height;
+            let actual_height = hit.time_of_impact + ray_origin.y;
+            linear_velocity.y = pid.compute(desired_height, actual_height, time.delta_seconds());
+        }
+    }
+}
 
-    //     transform.translation += move_vector * time.delta_seconds() * movement_settings.car_speed;
-    // }
+fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, &mut AngularVelocity)>) {
+    for (damping_factor, mut linear_velocity, mut angular_velocity) in &mut query {
+        linear_velocity.x *= damping_factor.0;
+        linear_velocity.z *= damping_factor.0;
+        angular_velocity.y *= damping_factor.0;
+    }
 }
