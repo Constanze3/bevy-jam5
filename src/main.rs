@@ -12,6 +12,7 @@ use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_camera_extras::{components::{AttachedTo, CameraControls}, plugins::CameraExtrasPlugin};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use car_controller::CarControllerPlugin;
 use player_controller::plugins::*;
 
 use cubemap_factory::*;
@@ -28,7 +29,8 @@ fn main() {
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
             CubemapFactoryPlugin,
-            CharacterControllerPlugin,
+            //CharacterControllerPlugin,
+            CarControllerPlugin
         ))
         .add_systems(Startup, (setup_world).chain())
         .init_state::<TestSkyboxState>()
