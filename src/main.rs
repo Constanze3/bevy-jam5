@@ -36,17 +36,20 @@ use bevy_flycam::prelude::*;
 use cameras::*;
 use car_controller::*;
 use plugin::*;
+use resources::MovementSettings;
 use simulation_state::SimulationStatePlugin;
 use ui::pause_menu::plugins::PauseMenuPlugin;
 
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
+        .init_resource::<MovementSettings>()
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
             CharacterControllerPlugin,
-            PauseMenuPlugin,
+            // TODO: fix PauseMenuPlugin
+            // PauseMenuPlugin,
             SimulationStatePlugin,
         ))
         .add_plugins(PlayerPlugin)

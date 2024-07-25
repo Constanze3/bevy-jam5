@@ -5,6 +5,12 @@ use bevy::prelude::*;
 
 use super::components::*;
 
+#[derive(Event)]
+pub struct ShowPauseMenu;
+#[derive(Event)]
+pub struct ShowSensitivityMenu;
+
+/// Spawns the pause menu
 pub fn show_pause_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn((
@@ -105,6 +111,7 @@ pub fn show_pause_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
 }
 
+/// Despawns the pause menu
 pub fn hide_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMenu>>) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
@@ -116,7 +123,6 @@ pub fn interact_with_buttons(
     mut exit: EventWriter<AppExit>,
     mut next_simulation_state: ResMut<NextState<SimulationState>>,
     mut commands: EventWriter<ShowSensitivityMenu>,
-    pause_menu_query: Query<Entity, With<PauseMenu>>,
 ) {
     for (interaction, button_action) in &interaction_query {
         if let Interaction::Pressed = *interaction {
@@ -150,6 +156,7 @@ pub fn interact_with_sensitivity_buttons(
     }
 }
 
+/// Spawns the sensitivity menu
 pub fn show_sensitivity_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -256,23 +263,18 @@ pub fn show_sensitivity_menu(
 
 pub fn update_sensitivity(
     mut slider_query: Query<&mut Style, With<Node>>,
-    mut sensitivity: ResMut<MovementSettings>,
+    mut settings: ResMut<MovementSettings>,
     mut mouse_motion_events: EventReader<MouseMotion>,
 ) {
-    // for event in &mouse_motion_events {
-    //     for mut style in slider_query.iter_mut() {
-    //         if let Val::Px(x) = style.left {
-    //             style.left = Val::Px(x + event.delta.x);
-    //             sensitivity.sensitivity = x + event.delta.x;
-    //         }
-    //     }
-    // }
+    for event in mouse_motion_events.read() {
+        for mut style in slider_query.iter_mut() {
+            if let Val::Px(x) = style.left {
+                style.left = Val::Px(x + event.delta.x);
+                settings.camera_sensitivity = x + event.delta.x;
+            }
+        }
+    }
 }
-
-#[derive(Event)]
-pub struct ShowPauseMenu;
-#[derive(Event)]
-pub struct ShowSensitivityMenu;
 
 pub fn handle_show_pause_menu(
     mut commands: Commands,
