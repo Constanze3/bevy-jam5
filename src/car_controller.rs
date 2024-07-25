@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use avian3d::{math::*, prelude::*};
 
-use super::{cameras::*, simulation_state::*, utils::*};
+use super::{cameras::*, simulation_state::*};
 
 pub struct CarControllerPlugin;
 
@@ -14,12 +14,12 @@ impl Plugin for CarControllerPlugin {
                 keyboard_input,
                 //free_camera_control,
                 movement,
+                keyboard_input.run_if(in_state(SimulationState::Running)),
+                movement.run_if(in_state(SimulationState::Running)),
                 apply_movement_damping,
                 make_car_float,
                 camera_follow_car,
-            )
-                .chain()
-                .run_if(in_state(SimulationState::Running)));
+            ).chain());
     }
 }
 
@@ -29,7 +29,6 @@ pub enum MovementAction {
     Turn(Scalar),
 }
 
-// TODO: flip CarDimensions and CarProperties to Components
 struct CarDimensions {
     pub length: f32,
     pub width: f32,
@@ -39,19 +38,22 @@ struct CarDimensions {
 struct CarProperties {
     pub dimensions: CarDimensions,
     pub starting_pos: Transform,
-    pub float_height: f32,
-    pub float_bob_height: f32,
 }
 
 impl Default for CarProperties {
     fn default() -> Self {
         return Self {
             dimensions: CarDimensions { length: 2.5, width: 1.5, height: 0.75 },
-            float_height: 1.0,
-            float_bob_height: 0.25,
             starting_pos: Transform::from_xyz(0.0, 0.5, 0.0),
         };
     }
+}
+
+#[derive(Component)]
+struct CarBehaviour {
+    float_height: Scalar,
+    float_amplitude: Scalar,
+    float_period: Scalar,
 }
 
 #[derive(Component)]
@@ -76,13 +78,45 @@ pub struct MovementAcceleration {
 pub struct MovementDampingFactor(Scalar);
 
 #[derive(Component)]
-pub struct FloatImpulse(Scalar);
+pub struct PID {
+    kp: f32,
+    ki: f32,
+    kd: f32,
+    integral: f32,
+    previous_error: f32,
+}
+
+impl Default for PID {
+    fn default() -> Self {
+        Self { 
+            kp: 1.0,
+            ki: 1.0,
+            kd: 1.0,
+
+            integral: 0.0,
+            previous_error: 0.0,
+        }
+    }
+}
+
+impl PID {
+    // Desired_value should probably be a set point in space, instead of chasing a 
+    // moving target, but assuming it's a continuous value in time... it should be somewhat fine.
+    fn compute(&mut self, desired_value: f32, actual_value: f32, delta_time: f32) -> f32 {
+        let error = desired_value - actual_value;
+        self.integral += error * delta_time;
+        let derivative = (error - self.previous_error) / delta_time;
+        self.previous_error = error;
+        return self.kp * error + self.ki * self.integral + self.kd * derivative;
+    }
+}
 
 #[derive(Bundle)]
 pub struct MovementBundle {
     acceleration: MovementAcceleration,
     damping: MovementDampingFactor,
-    float_impulse: FloatImpulse,
+    behaviour: CarBehaviour,
+    pid: PID,
 }
 
 impl MovementBundle {
@@ -90,19 +124,35 @@ impl MovementBundle {
         linear_acceleration: Scalar,
         angular_acceleration: Scalar,
         damping: Scalar,
-        float_impulse: Scalar,
+        float_height: Scalar,
+        float_amplitude: Scalar,
+        float_period: Scalar,
+        pid: PID,
     ) -> Self {
         Self {
             acceleration: MovementAcceleration { linear: linear_acceleration, angular: angular_acceleration },
             damping: MovementDampingFactor(damping),
-            float_impulse: FloatImpulse(float_impulse),
+            behaviour: CarBehaviour { 
+                float_height, 
+                float_amplitude, 
+                float_period, 
+            },
+            pid,
         }
     }
 }
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(30.0, 20.0, 0.9, 10.0)
+        Self::new(
+            30.0,
+            20.0,
+            0.9,
+            1.0,
+            0.5,
+            3.0,
+            PID::default(),
+        )
     }
 }
 
@@ -124,9 +174,11 @@ impl CarControllerBundle {
         linear_acceleration: Scalar,
         angular_acceleration: Scalar,
         damping: Scalar,
-        float_impulse: Scalar,
+        float_height: Scalar,
+        float_amplitude: Scalar,
+        float_period: Scalar,
     ) -> Self {
-        self.movement = MovementBundle::new(linear_acceleration, angular_acceleration, damping, float_impulse);
+        self.movement = MovementBundle::new(linear_acceleration, angular_acceleration, damping, float_height, float_amplitude, float_period, PID::default());
         self
     }
 }
@@ -146,35 +198,33 @@ fn setup_car(
             ..default()
         },
         CarControllerBundle::new(Collider::cuboid(props.dimensions.width, props.dimensions.height, props.dimensions.length))
-            .with_movement(30.0, 20.0, 0.92, 20.0),
+            .with_movement(30.0, 20.0, 0.92, 1.5, 0.75, 2.5),
         Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
         Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
         GravityScale(2.0),
     ));
 }
 
+// TODO: Replace me with a 3rd person camera
 fn camera_follow_car(
     q_car: Query<&Transform, With<CarController>>,
+    q_car_behaviour: Query<&CarBehaviour>,
     mut q_camera: Query<&mut Transform, (With<MainCamera>, Without<CarController>)>,
 ) {
+    let car_behaviour = q_car_behaviour.single();
+
     if let Ok(car_transform) = q_car.get_single() {
         if let Ok(mut camera_transform) = q_camera.get_single_mut() {
             let car_position = car_transform.translation;
             let car_forward = car_transform.forward();
 
             // Camera should follow the car from above and slightly behind it
-            let follow_distance = 15.0;
+            let follow_distance = 10.0;
             let follow_height = 10.0;
 
-            // Calculate desired camera position behind the car
-            let mut desired_camera_position = car_position - car_forward * follow_distance;
-            desired_camera_position.y += follow_height;
-
-            // Smoothly move the camera to the desired position
-            camera_transform.translation = desired_camera_position;
-
-            // Make the camera look at the car with a slight downward angle
-            camera_transform.look_at(car_position, Vec3::Y);
+            let car_middle_position = Vec3 { x: car_position.x, y: car_behaviour.float_height, z: car_position.z };
+            camera_transform.translation = car_middle_position - car_forward * follow_distance + Vec3::Y * follow_height;
+            camera_transform.look_at(car_middle_position, Vec3::Y);
         }
     }
 }
@@ -232,7 +282,8 @@ fn movement(
 fn make_car_float(
     time: Res<Time>,
     mut controllers: Query<(
-        &FloatImpulse,
+        &CarBehaviour,
+        &mut PID,
         &mut LinearVelocity,
     )>,
     q_car_transform: Query<&Transform, With<CarController>>,
@@ -241,18 +292,21 @@ fn make_car_float(
     let car_transform = q_car_transform.single();
     let car_props = CarProperties::default();
 
-    if let Some(hit) = spatial_query.cast_ray(
-        car_transform.translation - (0.01 + Vec3::Y * car_props.dimensions.height / 2.0), // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
-        Dir3::NEG_Y,
-        car_props.float_bob_height + car_props.float_height,
-        true,
-        SpatialQueryFilter::default(),
-    ) {
-        for (float_impulse, mut linear_velocity) in &mut controllers
-        {
-            let proportional_to_distance = 1.0 - sigmoid((hit.time_of_impact - car_props.float_height) / car_props.float_bob_height);
-            println!("Distance: {:?} -- Urgency: {:?}", hit.time_of_impact, proportional_to_distance);
-            linear_velocity.y += proportional_to_distance * float_impulse.0 * time.delta_seconds();
+    for (behaviour, mut pid, mut linear_velocity) in &mut controllers
+    {
+        // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
+        let ray_origin = car_transform.translation - (0.01 + Vec3::Y * car_props.dimensions.height / 2.0);
+
+        if let Some(hit) = spatial_query.cast_ray(
+            ray_origin,
+            Dir3::NEG_Y,
+            2.0 * behaviour.float_amplitude + behaviour.float_height,
+            true,
+            SpatialQueryFilter::default(),
+        ) {
+            let desired_height = f32::sin(time.elapsed_seconds() * behaviour.float_period) * behaviour.float_amplitude + behaviour.float_height;
+            let actual_height = hit.time_of_impact + ray_origin.y;
+            linear_velocity.y = pid.compute(desired_height, actual_height, time.delta_seconds());
         }
     }
 }

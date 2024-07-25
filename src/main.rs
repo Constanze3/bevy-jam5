@@ -32,7 +32,7 @@ fn main() {
             //CharacterControllerPlugin,
             CarControllerPlugin
         ))
-        .add_systems(Startup, (setup_world).chain())
+        .add_systems(Startup, setup_world)
         .init_state::<TestSkyboxState>()
         .add_systems(
             Update,
