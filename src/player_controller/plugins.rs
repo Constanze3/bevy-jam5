@@ -1,7 +1,9 @@
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 
-use super::lib::*;
+use crate::player_car_swap::Rider;
+
+use super::*;
 
 pub struct CharacterControllerPlugin;
 
@@ -50,12 +52,14 @@ pub struct CharacterControllerBundle {
     character_controller: CharacterController,
     rigid_body: RigidBody,
     collider: Collider,
+    collision_layers: CollisionLayers,
     ground_caster: ShapeCaster,
     gravity: ControllerGravity,
     movement: MovementBundle,
     player_marker: Player,
     player_name: Name,
     desired_direction: DesiredDirection,
+    rider: Rider
 }
 
 
@@ -90,6 +94,12 @@ impl Default for MovementBundle {
     }
 }
 
+#[derive(PhysicsLayer)]
+pub enum CollisionMask {
+    Player,
+    Car
+}
+
 impl CharacterControllerBundle {
     pub fn new(collider: Collider, gravity: Vector) -> Self {
         // Create shape caster as a slightly smaller version of collider
@@ -100,6 +110,7 @@ impl CharacterControllerBundle {
             character_controller: CharacterController,
             rigid_body: RigidBody::Kinematic,
             collider,
+            collision_layers: CollisionLayers::new(CollisionMask::Player, CollisionMask::Car),
             ground_caster: ShapeCaster::new(
                 caster_shape,
                 Vector::ZERO,
@@ -111,7 +122,11 @@ impl CharacterControllerBundle {
             movement: MovementBundle::default(),
             player_marker: Player,
             desired_direction: DesiredDirection::default(),
-            player_name:  Name::new("player")
+            player_name:  Name::new("player"),
+            rider: Rider {
+                ride: None,
+                bottom_pos: Vec3::default()
+            }
         }
     }
 

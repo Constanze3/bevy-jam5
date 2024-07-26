@@ -3,4 +3,7 @@ pub mod resources;
 pub mod systems;
 pub mod plugins;
 
-pub use systems::*;
+use systems::*;
+pub use resources::*;
+pub use components::*;
+pub use plugins::*;

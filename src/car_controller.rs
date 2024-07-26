@@ -3,7 +3,7 @@ use avian3d::{math::*, prelude::*};
 use bevy_camera_extras::{CameraControls, CameraDistanceOffset};
 
 //use super::{cameras::*, simulation_state::*};
-use crate::simulation_state::*;
+use crate::{player_car_swap::{Ridable, Rider}, player_controller::CollisionMask, simulation_state::*};
 
 pub struct CarControllerPlugin;
 
@@ -69,6 +69,8 @@ pub struct CarControllerBundle {
     collider: Collider,
     locked_axes: LockedAxes,
     movement: MovementBundle,
+    collision_layers: CollisionLayers,
+    ridable: Ridable,
 }
 
 #[derive(Component)]
@@ -169,6 +171,11 @@ impl CarControllerBundle {
                 .lock_rotation_x()
                 .lock_rotation_z(),
             movement: MovementBundle::default(),
+            ridable: Ridable {
+                seat_offset: Transform::default()
+            },
+            collision_layers: CollisionLayers::new(CollisionMask::Car, [CollisionMask::Player])
+
         }
     }
 
@@ -267,26 +274,40 @@ fn movement(
         &mut LinearVelocity,
         &mut AngularVelocity,
     )>,
-    q_car_transform: Query<&Transform, With<CarController>>,
+    mut riders: Query<(&Rider, &mut Transform), Without<CarController>>,
+    q_car_transform: Query<(&Transform, &Ridable), With<CarController>>,
 ) {
-    let car_transform = q_car_transform.single();
-    let car_forward = car_transform.forward();
+    // only drive cars that are being riden
+    for (ride, mut rider_transform) in riders.iter_mut()
+    .filter(|(rider, ..)| rider.ride.is_some())
+    .map(|(rider, trans)| (rider.ride.unwrap(), trans)) {
+        let Ok((car_transform, ride_info)) = q_car_transform.get(ride) else {return};
 
-    for event in movement_event_reader.read() {
-        for (acceleration, mut linear_velocity, mut angular_velocity) in
-            &mut controllers
-        {
-            match event {
-                MovementAction::Move(speed) => {
-                    linear_velocity.x += car_forward.x * speed * acceleration.linear * time.delta_seconds();
-                    linear_velocity.z += car_forward.z * speed * acceleration.linear * time.delta_seconds();
-                }
-                MovementAction::Turn(speed) => {
-                    angular_velocity.y += speed * acceleration.angular * time.delta_seconds();
+
+        rider_transform.translation = car_transform.translation + ride_info.seat_offset.translation;
+        rider_transform.rotation = car_transform.rotation + ride_info.seat_offset.rotation;
+
+        let car_forward = car_transform.forward();
+
+    
+        for event in movement_event_reader.read() {
+            for (acceleration, mut linear_velocity, mut angular_velocity) in
+                &mut controllers
+            {
+                match event {
+                    MovementAction::Move(speed) => {
+                        linear_velocity.x += car_forward.x * speed * acceleration.linear * time.delta_seconds();
+                        linear_velocity.z += car_forward.z * speed * acceleration.linear * time.delta_seconds();
+                    }
+                    MovementAction::Turn(speed) => {
+                        angular_velocity.y += speed * acceleration.angular * time.delta_seconds();
+                    }
                 }
             }
         }
     }
+    
+
 }
 
 fn make_car_float(

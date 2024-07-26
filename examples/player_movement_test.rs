@@ -6,8 +6,9 @@
 
 use avian3d::{collision::Collider, debug_render::PhysicsDebugPlugin, math::{Scalar, Vector}, prelude::RigidBody, PhysicsPlugins};
 use bevy::prelude::*;
-use bevy_camera_extras::{CameraControls, CameraExtrasPlugin};
+use bevy_camera_extras::{resources::KeyBindings, CameraControls, CameraExtrasPlugin};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_jam5::player_controller::*;
 
 fn main() {
     App::new()
@@ -18,7 +19,11 @@ fn main() {
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
-            keybinds_override: None,
+            keybinds_override: Some(KeyBindings {
+                // to disable switching keybindings, how about we just set it to a key the user wont(probably) have access to?
+                switch_camera_mode: KeyCode::NonConvert,
+                ..default()
+            }),
             movement_settings_override: None,
         })
 

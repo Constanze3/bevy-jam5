@@ -1,24 +1,16 @@
-mod cameras;
-mod car_controller;
-mod cubemap_factory;
-mod resources;
-mod simulation_state;
-mod utils;
-pub mod player_controller;
-pub mod player_car_swap;
-
 use avian3d::{math::*, prelude::*};
 use bevy::{core_pipeline::Skybox, prelude::*};
+use bevy_camera_extras::resources::KeyBindings;
 use bevy_camera_extras::{plugins::CameraExtrasPlugin, CameraControls};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use car_controller::CarControllerPlugin;
+use bevy_jam5::cubemap_factory::*;
+use bevy_jam5::player_controller::*;
+use bevy_jam5::car_controller::*;
+use bevy_jam5::player_car_swap::*;
+use bevy_jam5::resources::*;
+use bevy_jam5::simulation_state::*;
 
-use cubemap_factory::*;
-use player_car_swap::plugins::PlayerCarSwapPlugin;
-use player_controller::plugins::{CharacterControllerBundle, CharacterControllerPlugin};
-use resources::*;
-use simulation_state::*;
 //use plugin::*;
 
 fn main() {
@@ -42,7 +34,11 @@ fn main() {
         )
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
-            keybinds_override: None,
+            keybinds_override: Some(KeyBindings {
+                // to disable switching keybindings, how about we just set it to a key the user wont(probably) have access to?
+                switch_camera_mode: KeyCode::NonConvert,
+                ..default()
+            }),
             movement_settings_override: None,
         })
         //.add_systems(Update, close_on_esc)

@@ -7,7 +7,7 @@ pub struct PlayerCarSwapPlugin;
 impl Plugin for PlayerCarSwapPlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_systems(Update, swap_camera_target)
+        .add_systems(Update, enter_car)
         ;
     }
 }

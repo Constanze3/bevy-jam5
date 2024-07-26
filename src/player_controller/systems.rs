@@ -3,7 +3,9 @@ use bevy::{ecs::query::Has, input::mouse::MouseMotion, math::VectorSpace, prelud
 use bevy_camera_extras::{resources::{InputState, MovementSettings, RestraintsToggled}, CameraControls};
 
 
-use super::lib::*;
+use crate::player_car_swap::Rider;
+
+use super::*;
 
 /// Kinematic bodies do not get pushed by collisions by default,
 /// so it needs to be done manually.
@@ -19,6 +21,7 @@ pub fn kinematic_controller_collisions(
     collider_parents: Query<&ColliderParent, Without<Sensor>>,
     mut character_controllers: Query<
         (
+            &Rider,
             &mut Position,
             &Rotation,
             &mut LinearVelocity,
@@ -44,7 +47,7 @@ pub fn kinematic_controller_collisions(
         let character_rb: RigidBody;
         let is_other_dynamic: bool;
 
-        let (mut position, rotation, mut linear_velocity, max_slope_angle) =
+        let (rider, mut position, rotation, mut linear_velocity, max_slope_angle) =
             if let Ok(character) = character_controllers.get_mut(collider_parent1.get()) {
                 is_first = true;
                 character_rb = *bodies.get(collider_parent1.get()).unwrap();
@@ -62,6 +65,10 @@ pub fn kinematic_controller_collisions(
             } else {
                 continue;
             };
+        // stop tracking collisions if palyer is riding soemthing
+        if rider.ride.is_some() {
+            continue;
+        }
 
         // This system only handles collision response for kinematic character controllers.
         if !character_rb.is_kinematic() {
