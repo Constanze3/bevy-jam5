@@ -1,10 +1,12 @@
 pub mod plugins;
 pub mod resources;
 mod systems;
-mod components;
+pub mod components;
 
 
-use components::*;
-use resources::*;
-use systems::*;
-use plugins::*;
+mod lib {
+    pub use super::components::*;
+    pub use super::resources::*;
+    pub use super::systems::*;
+    pub use super::plugins::*;
+}

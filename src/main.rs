@@ -4,18 +4,19 @@ mod cubemap_factory;
 mod resources;
 mod simulation_state;
 mod utils;
-mod player_controller;
+pub mod player_controller;
+pub mod player_car_swap;
 
 use avian3d::{math::*, prelude::*};
 use bevy::{core_pipeline::Skybox, prelude::*};
-use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy_camera_extras::{components::{AttachedTo, CameraControls}, plugins::CameraExtrasPlugin};
+use bevy_camera_extras::{plugins::CameraExtrasPlugin, CameraControls};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use car_controller::CarControllerPlugin;
-use player_controller::plugins::*;
 
 use cubemap_factory::*;
+use player_car_swap::plugins::PlayerCarSwapPlugin;
+use player_controller::plugins::{CharacterControllerBundle, CharacterControllerPlugin};
 use resources::*;
 use simulation_state::*;
 //use plugin::*;
@@ -29,7 +30,8 @@ fn main() {
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
             CubemapFactoryPlugin,
-            //CharacterControllerPlugin,
+            PlayerCarSwapPlugin,
+            CharacterControllerPlugin,
             CarControllerPlugin
         ))
         .add_systems(Startup, setup_world)
@@ -100,8 +102,10 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>, mut meshes: Res
                 transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
                 ..default()
             },
-            CameraControls,
-            AttachedTo(player)
+            CameraControls {
+                camera_mode: bevy_camera_extras::CameraMode::FirstPerson,
+                attach_to: player,
+            },
         )
     );
 

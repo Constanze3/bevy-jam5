@@ -1,6 +1,7 @@
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
-use super::*;
+
+use super::lib::*;
 
 pub struct CharacterControllerPlugin;
 
@@ -17,6 +18,7 @@ impl Plugin for CharacterControllerPlugin {
                 //gamepad_input,
                 update_grounded,
                 apply_gravity,
+                player_look,
                 movement,
                 apply_movement_damping,
             )
@@ -35,15 +37,6 @@ impl Plugin for CharacterControllerPlugin {
     }
 }
 
-/// An event sent for a movement input action.
-// #[derive(Event)]
-// pub enum MovementAction {
-//     Move(Vector2),
-//     Jump,
-// }
-
-
-
 /// The maximum angle a slope can have for a character controller
 /// to be able to climb and jump. If the slope is steeper than this angle,
 /// the character will slide down.
@@ -61,6 +54,7 @@ pub struct CharacterControllerBundle {
     gravity: ControllerGravity,
     movement: MovementBundle,
     player_marker: Player,
+    player_name: Name,
     desired_direction: DesiredDirection,
 }
 
@@ -116,7 +110,8 @@ impl CharacterControllerBundle {
             gravity: ControllerGravity(gravity),
             movement: MovementBundle::default(),
             player_marker: Player,
-            desired_direction: DesiredDirection::default()
+            desired_direction: DesiredDirection::default(),
+            player_name:  Name::new("player")
         }
     }
 

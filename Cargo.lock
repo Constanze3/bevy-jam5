@@ -531,9 +531,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_camera_extras"
-version = "0.7.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b17b3c17851eb19187bfd4843f460b04d8d3034263c61b99aedc5c1997462f3c"
+checksum = "83479da64b282555dcbe86cd951657eca49b3e3bcbb7f5d67add3f54986dccdb"
 dependencies = [
  "bevy_app",
  "bevy_asset",

@@ -1,6 +1,5 @@
 use avian3d::math::*;
 use bevy::{ecs::prelude::*, prelude::{Deref, DerefMut, KeyCode}, reflect::Reflect};
-use super::resources::*;
 
 /// A marker component indicating that an entity is using a character controller.
 #[derive(Component, Reflect)]
