@@ -12,8 +12,7 @@ pub struct SimulationStatePlugin;
 
 impl Plugin for SimulationStatePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_state::<SimulationState>()
+        app.init_state::<SimulationState>()
             .add_systems(Startup, setup_simulation)
             .add_systems(Update, toggle_simulation)
             .add_systems(OnEnter(SimulationState::Paused), on_simulation_paused)
@@ -34,16 +33,12 @@ fn toggle_simulation(
     }
 }
 
-fn setup_simulation(
-    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
-) {
+fn setup_simulation(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
     let window = q_windows.single_mut();
     grab_cursor(window);
 }
 
-fn on_simulation_paused(
-    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
-) {
+fn on_simulation_paused(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
     // TODO: It would be great to add some kind of text that says we're paused.
     // Unfortunately, I've no idea how to implement some overlay/text in front of the camera at this time.
     println!("Game paused.");
@@ -52,9 +47,7 @@ fn on_simulation_paused(
     release_cursor(window);
 }
 
-fn on_simulation_unpaused(
-    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
-) {
+fn on_simulation_unpaused(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
     // TODO: It would be great to remove said text that says we're paused.
     println!("Game unpaused.");
 

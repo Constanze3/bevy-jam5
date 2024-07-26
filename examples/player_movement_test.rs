@@ -6,7 +6,7 @@
 
 use avian3d::{collision::Collider, debug_render::PhysicsDebugPlugin, math::{Scalar, Vector}, prelude::RigidBody, PhysicsPlugins};
 use bevy::prelude::*;
-use bevy_camera_extras::{resources::KeyBindings, CameraControls, CameraExtrasPlugin};
+use bevy_camera_extras::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_jam5::player_controller::*;
 

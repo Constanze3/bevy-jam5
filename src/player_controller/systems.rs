@@ -1,6 +1,7 @@
 use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, input::mouse::MouseMotion, math::VectorSpace, prelude::*, window::{CursorGrabMode, PrimaryWindow}};
-use bevy_camera_extras::{resources::{InputState, MovementSettings, RestraintsToggled}, CameraControls};
+
+use bevy_camera_extras::*;
 
 
 use crate::player_car_swap::Rider;

@@ -7,10 +7,18 @@ edition = "2021"
 bevy = {version = "0.14.0", features = ["dynamic_linking"]}
 avian3d = "0.1"
 bevy-inspector-egui = "0.25"
-bevy_camera_extras = "0.9"
+bevy_camera_extras = "0.10"
+bevy_asset_loader = "0.21.0"
+#player_controller = {path = "crates/player_controller"}
+bevy_flycam = "*"
+
+[dependencies.bevy_outline_post_process]
+git = "https://github.com/exvacuum/bevy_outline_post_process.git"
 
 [profile.dev]
 opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
+
+bevy_camera_extras = "0.9"
