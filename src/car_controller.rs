@@ -292,7 +292,8 @@ fn make_car_float(
     for (behaviour, mut pid, mut linear_velocity) in &mut controllers
     {
         // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
-        let ray_origin = car_transform.translation - (0.01 + Vec3::Y * car_props.dimensions.height / 2.0);
+        let distance_middlepoint_to_undercar = 0.01 + car_props.dimensions.height / 2.0;
+        let ray_origin = car_transform.translation - Vec3::Y * distance_middlepoint_to_undercar;
 
         if let Some(hit) = spatial_query.cast_ray(
             ray_origin,
@@ -302,7 +303,7 @@ fn make_car_float(
             SpatialQueryFilter::default(),
         ) {
             let desired_height = f32::sin(time.elapsed_seconds() * behaviour.float_period) * behaviour.float_amplitude + behaviour.float_height;
-            let actual_height = hit.time_of_impact + ray_origin.y;
+            let actual_height = hit.time_of_impact + distance_middlepoint_to_undercar;
             linear_velocity.y = pid.compute(desired_height, actual_height, time.delta_seconds());
         }
     }
