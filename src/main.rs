@@ -9,14 +9,12 @@ mod utils;
 use avian3d::{math::*, prelude::*};
 use bevy::{core_pipeline::Skybox, prelude::*};
 use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy_camera_extras::{
-    components::{AttachedTo, CameraControls},
-    plugins::CameraExtrasPlugin,
-};
+use bevy_camera_extras::CameraMode;
+use bevy_camera_extras::{components::CameraControls, plugins::CameraExtrasPlugin};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::player_controller::{Hand, UpPickable};
 use player_controller::plugins::*;
+use player_controller::*;
 
 use cubemap_factory::*;
 use resources::*;
@@ -104,7 +102,7 @@ fn setup_world(
             parent.spawn((
                 Name::new("Hand"),
                 SpatialBundle {
-                    transform: Transform::from_xyz(1.0, 0.0, 0.0),
+                    transform: Transform::from_xyz(0.0, 0.0, -1.0),
                     ..default()
                 },
                 Hand,
@@ -118,8 +116,10 @@ fn setup_world(
             transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
-        CameraControls,
-        AttachedTo(player),
+        CameraControls {
+            attach_to: player,
+            camera_mode: CameraMode::FirstPerson,
+        },
     ));
 
     // A cube to move around
