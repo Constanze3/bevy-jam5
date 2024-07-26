@@ -20,7 +20,7 @@ impl Plugin for CarControllerPlugin {
                 movement.run_if(in_state(SimulationState::Running)),
                 apply_movement_damping,
                 //FIXME: commented out until this doesnt glitch the car out of the map
-                make_car_float,
+                //make_car_float,
                 //camera_follow_car,
             ).chain());
     }
@@ -222,29 +222,6 @@ fn setup_car(
 
 }
 
-// // TODO: Replace me with a 3rd person camera
-// fn camera_follow_car(
-//     q_car: Query<&Transform, With<CarController>>,
-//     q_car_behaviour: Query<&CarBehaviour>,
-//     mut q_camera: Query<&mut Transform, (With<MainCamera>, Without<CarController>)>,
-// ) {
-//     let car_behaviour = q_car_behaviour.single();
-
-//     if let Ok(car_transform) = q_car.get_single() {
-//         if let Ok(mut camera_transform) = q_camera.get_single_mut() {
-//             let car_position = car_transform.translation;
-//             let car_forward = car_transform.forward();
-
-//             // Camera should follow the car from above and slightly behind it
-//             let follow_distance = 10.0;
-//             let follow_height = 10.0;
-
-//             let car_middle_position = Vec3 { x: car_position.x, y: car_behaviour.float_height, z: car_position.z };
-//             camera_transform.translation = car_middle_position - car_forward * follow_distance + Vec3::Y * follow_height;
-//             camera_transform.look_at(car_middle_position, Vec3::Y);
-//         }
-//     }
-// }
 
 fn keyboard_input(
     mut movement_event_writer: EventWriter<MovementAction>,
