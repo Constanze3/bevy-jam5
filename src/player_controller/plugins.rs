@@ -2,11 +2,15 @@ use super::*;
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 
+use crate::player_car_swap::Rider;
+
+use super::*;
+
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(interaction::plugin)
+        app
             //.add_event::<MovementAction>()
             .insert_resource(PlayerControls::default())
             .insert_resource(PlayerSettings::default())
@@ -17,6 +21,7 @@ impl Plugin for CharacterControllerPlugin {
                     //gamepad_input,
                     update_grounded,
                     apply_gravity,
+                    player_look,
                     movement,
                     apply_movement_damping,
                 )
@@ -34,13 +39,6 @@ impl Plugin for CharacterControllerPlugin {
     }
 }
 
-/// An event sent for a movement input action.
-// #[derive(Event)]
-// pub enum MovementAction {
-//     Move(Vector2),
-//     Jump,
-// }
-
 /// The maximum angle a slope can have for a character controller
 /// to be able to climb and jump. If the slope is steeper than this angle,
 /// the character will slide down.
@@ -54,11 +52,14 @@ pub struct CharacterControllerBundle {
     character_controller: CharacterController,
     rigid_body: RigidBody,
     collider: Collider,
+    collision_layers: CollisionLayers,
     ground_caster: ShapeCaster,
     gravity: ControllerGravity,
     movement: MovementBundle,
     player_marker: Player,
+    player_name: Name,
     desired_direction: DesiredDirection,
+    rider: Rider,
 }
 
 /// A bundle that contains components for character movement.
@@ -92,6 +93,12 @@ impl Default for MovementBundle {
     }
 }
 
+#[derive(PhysicsLayer)]
+pub enum CollisionMask {
+    Player,
+    Car,
+}
+
 impl CharacterControllerBundle {
     pub fn new(collider: Collider, gravity: Vector) -> Self {
         // Create shape caster as a slightly smaller version of collider
@@ -102,6 +109,7 @@ impl CharacterControllerBundle {
             character_controller: CharacterController,
             rigid_body: RigidBody::Kinematic,
             collider,
+            collision_layers: CollisionLayers::new(CollisionMask::Player, CollisionMask::Car),
             ground_caster: ShapeCaster::new(
                 caster_shape,
                 Vector::ZERO,
@@ -113,6 +121,11 @@ impl CharacterControllerBundle {
             movement: MovementBundle::default(),
             player_marker: Player,
             desired_direction: DesiredDirection::default(),
+            player_name: Name::new("player"),
+            rider: Rider {
+                ride: None,
+                bottom_pos: Vec3::default(),
+            },
         }
     }
 

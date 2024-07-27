@@ -1,10 +1,14 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
+// pub mod player_controller;
+// pub mod player_car_swap;
+// pub mod car_controller;
+// pub mod simulation_state;
 
 use avian3d::{collision::Collider, debug_render::PhysicsDebugPlugin, math::{Scalar, Vector}, prelude::RigidBody, PhysicsPlugins};
 use bevy::prelude::*;
-use bevy_camera_extras::{components::{AttachedTo, CameraControls, Viewer, Watched}, plugins::CameraExtrasPlugin};
+use bevy_camera_extras::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::player_controller::plugins::*;
+use bevy_jam5::player_controller::*;
 
 fn main() {
     App::new()
@@ -15,7 +19,11 @@ fn main() {
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(CameraExtrasPlugin {
             cursor_grabbed_by_default: true,
-            keybinds_override: None,
+            keybinds_override: Some(KeyBindings {
+                // to disable switching keybindings, how about we just set it to a key the user wont(probably) have access to?
+                switch_camera_mode: KeyCode::NonConvert,
+                ..default()
+            }),
             movement_settings_override: None,
         })
 
@@ -62,7 +70,6 @@ fn setup(
         },
         CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
             .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
-        Name::new("player"),
     )).id();
 
     // camera
@@ -72,8 +79,11 @@ fn setup(
                 transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
                 ..default()
             },
-            CameraControls,
-            AttachedTo(player)
+            CameraControls {
+                camera_mode: bevy_camera_extras::CameraMode::FirstPerson,
+                attach_to: player
+            },
+            
 
         )
     );

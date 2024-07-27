@@ -1,6 +1,15 @@
 use avian3d::{math::*, prelude::*};
-use bevy::{ecs::query::Has, math::VectorSpace, prelude::*};
-use bevy_camera_extras::{resources::RestraintsToggled, CameraControls};
+use bevy::{
+    ecs::query::Has,
+    input::mouse::MouseMotion,
+    math::VectorSpace,
+    prelude::*,
+    window::{CursorGrabMode, PrimaryWindow},
+};
+
+use bevy_camera_extras::*;
+
+use crate::player_car_swap::Rider;
 
 use super::*;
 
@@ -18,6 +27,7 @@ pub fn kinematic_controller_collisions(
     collider_parents: Query<&ColliderParent, Without<Sensor>>,
     mut character_controllers: Query<
         (
+            &Rider,
             &mut Position,
             &Rotation,
             &mut LinearVelocity,
@@ -43,7 +53,7 @@ pub fn kinematic_controller_collisions(
         let character_rb: RigidBody;
         let is_other_dynamic: bool;
 
-        let (mut position, rotation, mut linear_velocity, max_slope_angle) =
+        let (rider, mut position, rotation, mut linear_velocity, max_slope_angle) =
             if let Ok(character) = character_controllers.get_mut(collider_parent1.get()) {
                 is_first = true;
                 character_rb = *bodies.get(collider_parent1.get()).unwrap();
@@ -61,6 +71,10 @@ pub fn kinematic_controller_collisions(
             } else {
                 continue;
             };
+        // stop tracking collisions if palyer is riding soemthing
+        if rider.ride.is_some() {
+            continue;
+        }
 
         // This system only handles collision response for kinematic character controllers.
         if !character_rb.is_kinematic() {
@@ -181,38 +195,6 @@ pub fn connect_camera_to_reciever(
     }
 }
 
-// /// sets [`DesiredDirection`] for player.
-// pub fn keyboard_input(
-//     keys: Res<ButtonInput<KeyCode>>,
-//     player_controls: Res<PlayerControls>,
-//     mut desired_directions: Query<&mut DesiredDirection>
-// ) {
-//     let up = keys.any_pressed(player_controls.forward.clone());
-//     let down = keys.any_pressed(player_controls.back.clone());
-//     let left = keys.any_pressed(player_controls.left.clone());
-//     let right = keys.any_pressed(player_controls.right.clone());
-
-//     let jump = keys.just_pressed(KeyCode::Space);
-
-//     // let horizontal = right as i8 - left as i8;
-//     // let vertical = up as i8 - down as i8;
-//     let sideways_movement = right as i8 - left as i8;
-//     let frontal_movement = up as i8 - down as i8;
-//     let vertical_movement = jump as i8 as f32;
-
-//     // let new_direction = Vector2::new(sideways_movement as Scalar, frontal_movement as Scalar).clamp_length_max(1.0);
-//     let xy_momentum: Vec2 = Vector2::new(sideways_movement as Scalar, frontal_movement as Scalar).clamp_length_max(1.0);
-
-//     let new_direction = Vector3::new(xy_momentum.x ,vertical_movement, xy_momentum.y);
-
-//     // this will move every player that exists in sync. If this is refactored for multiplayer, this will need to be refactored.
-//     // crashing for more then 1 player is not worth it.
-//     for mut direction in desired_directions.iter_mut() {
-//         **direction = new_direction;
-//     }
-
-// }
-
 /// Updates the [`Grounded`] status for character controllers.
 pub fn update_grounded(
     mut commands: Commands,
@@ -236,6 +218,49 @@ pub fn update_grounded(
             commands.entity(entity).insert(Grounded);
         } else {
             commands.entity(entity).remove::<Grounded>();
+        }
+    }
+}
+
+/// Handles looking around if cursor is locked
+pub fn player_look(
+    settings: Res<MovementSettings>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
+    mut state: ResMut<InputState>,
+    motion: Res<Events<MouseMotion>>,
+    restraints_toggled: Res<RestraintsToggled>,
+    mut query: Query<&mut Transform, (With<Camera>, With<CameraControls>)>,
+) {
+    let window = match primary_window.get_single() {
+        Ok(win) => win,
+        Err(err) => {
+            warn!("Unable to rotate camera, Reason: {:#}", err);
+            return;
+        }
+    };
+
+    if restraints_toggled.0 == false {
+        for mut transform in query.iter_mut() {
+            //println!("making camera follow movement");
+
+            for ev in state.reader_motion.read(&motion) {
+                let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
+                match window.cursor.grab_mode {
+                    CursorGrabMode::None => (),
+                    _ => {
+                        // Using smallest of height or width ensures equal vertical and horizontal sensitivity
+                        let window_scale = window.height().min(window.width());
+                        pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
+                        yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
+                    }
+                }
+
+                pitch = pitch.clamp(-1.54, 1.54);
+
+                // Order is important to prevent unintended roll
+                transform.rotation =
+                    Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+            }
         }
     }
 }
@@ -285,14 +310,11 @@ pub fn movement(
     {
         let mut velocity = Vec3::ZERO;
 
-        //let local_player_rot = player_trans.local
-
         let axis = EulerRot::XYZ;
         let Ok((_, cam_trans)) = cameras.get(camera_entity.0) else {
             continue;
         };
-        // let player_rot = transform.rotation.to_euler(axis);
-        // let camera_rot = cam_trans.rotation.to_euler(axis);
+        player_trans.rotation = Quat::from_rotation_y(cam_trans.rotation.to_euler(axis).1);
 
         player_trans.rotation = Quat::from_rotation_y(cam_trans.rotation.to_euler(EulerRot::YXZ).0);
 
@@ -318,11 +340,6 @@ pub fn movement(
 
         velocity = velocity.normalize_or_zero();
 
-        //if direction.0 != Vec3::ZERO {
-        //println!("moving towards: {:#}", direction.0);
-        // linear_velocity.x += direction.x * movement_acceleration.0 * delta_time;
-        // linear_velocity.z -= direction.z * movement_acceleration.0 * delta_time;
-
         let mut runspeed_increase = 1.0;
 
         if keys.any_pressed(player_controls.sprinting.clone()) {
@@ -339,30 +356,10 @@ pub fn movement(
             * player_settings.speed
             * runspeed_increase;
 
-        //}
         if is_grounded {
             linear_velocity.y = velocity.y * jump_impulse.0;
-
-            // if keys.pressed(KeyCode::Space) {
-            //     //velocity += 1.0 * jump_impulse.0;
-            //     linear_velocity.y = 1.0 * jump_impulse.0;
-            // }
-            //linear_velocity.y = direction.y * jump_impulse.0;
         }
-        // match event {
-        //     MovementAction::Move(direction) => {
-        //         println!("camera direction: {:#?}", cam_trans);
-        //         linear_velocity.x += direction.x * movement_acceleration.0 * delta_time;
-        //         linear_velocity.z -= direction.y * movement_acceleration.0 * delta_time;
-        //     }
-        //     MovementAction::Jump => {
-        //         if is_grounded {
-        //             linear_velocity.y = jump_impulse.0;
-        //         }
-        //     }
-        // }
     }
-    //}
 }
 
 /// Applies [`ControllerGravity`] to character controllers.

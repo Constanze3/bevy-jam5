@@ -4,8 +4,8 @@ pub mod plugins;
 pub mod resources;
 mod systems;
 
-use components::*;
+pub use components::*;
 pub use interaction::*;
-use plugins::*;
+pub use plugins::*;
 use resources::*;
 use systems::*;

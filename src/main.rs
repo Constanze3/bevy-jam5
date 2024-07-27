@@ -1,28 +1,20 @@
-mod cameras;
-mod car_controller;
-mod cubemap_factory;
-mod damping;
-mod player_controller;
-mod resources;
-mod simulation_state;
-mod utils;
-
+use asset_loading::AssetLoaderPlugin;
 use avian3d::{math::*, prelude::*};
-use bevy::{core_pipeline::Skybox, prelude::*};
-use bevy::{input::mouse::MouseMotion, prelude::*};
-use bevy_camera_extras::CameraMode;
-use bevy_camera_extras::{components::CameraControls, plugins::CameraExtrasPlugin};
+use bevy::{
+    core_pipeline::{prepass::NormalPrepass, Skybox},
+    prelude::*,
+};
+use bevy_camera_extras::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use damping::{Pid, SmoothDamp, TransformPid};
-use player_controller::pick_up::UpPickable;
-use player_controller::plugins::*;
-use player_controller::*;
+use bevy_jam5::car_controller::*;
+use bevy_jam5::player_car_swap::*;
+use bevy_jam5::player_controller::*;
+use bevy_jam5::simulation_state::*;
+use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
 
-use cubemap_factory::*;
-use resources::*;
-use simulation_state::*;
 //use plugin::*;
+use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
 
 fn main() {
     App::new()
@@ -32,24 +24,33 @@ fn main() {
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
+            // PlayerPlugin,
+            CarControllerPlugin,
             CubemapFactoryPlugin,
+            PlayerCarSwapPlugin,
             CharacterControllerPlugin,
-            damping::reflect_plugin,
-            PhysicsDebugPlugin::default(),
+            OutlinePostProcessPlugin,
+            AssetLoaderPlugin,
+            SpawnWorldPlugin,
+            CameraExtrasPlugin {
+                cursor_grabbed_by_default: true,
+                keybinds_override: Some(KeyBindings {
+                    // to disable switching keybindings, how about we just set it to a key the user wont(probably) have access to?
+                    switch_camera_mode: KeyCode::NonConvert,
+                    ..default()
+                }),
+                movement_settings_override: None,
+            },
         ))
-        .add_systems(Startup, (setup_world).chain())
+        .init_state::<GameState>()
+        .insert_resource(Msaa::Off)
+        .add_systems(Startup, setup_world)
         .init_state::<TestSkyboxState>()
         .add_systems(
             Update,
             test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
         )
-        .add_plugins(CameraExtrasPlugin {
-            cursor_grabbed_by_default: true,
-            keybinds_override: None,
-            movement_settings_override: None,
-        })
         .insert_resource(MovementSettings::default())
-        // .add_systems(FixedUpdate, camera_control)
         .run();
 }
 
@@ -73,13 +74,15 @@ fn test_skybox(
     if cameras.is_empty() {
         return;
     }
-    println!("camera count: {:#?}", cameras.iter().len());
-    commands
-        .entity(cameras.get_single().unwrap())
-        .insert(Skybox {
+
+    commands.entity(cameras.get_single().unwrap()).insert((
+        Skybox {
             image: cubemap_factory.load_from_folder("sky", assets, images),
             brightness: 1000.0,
-        });
+        },
+        NormalPrepass,
+        OutlinePostProcessSettings::new(1.5, 0.0, false),
+    ));
 
     next_state.set(TestSkyboxState::Done);
 }
@@ -90,31 +93,17 @@ fn setup_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Player
-    let player = commands
-        .spawn((
-            PbrBundle {
-                mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
-                material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-                transform: Transform::from_xyz(0.0, 1.5, 0.0),
-                ..default()
-            },
-            CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
-                .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
-        ))
-        .id();
-
-    // camera
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
-        CameraControls {
-            attach_to: player,
-            camera_mode: CameraMode::FirstPerson,
-        },
-    ));
+    // // Player
+    // let player = commands.spawn((
+    //     PbrBundle {
+    //         mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
+    //         material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
+    //         transform: Transform::from_xyz(0.0, 1.5, 0.0),
+    //         ..default()
+    //     },
+    //     CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
+    //         .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+    // )).id();
 
     // A cube to move around
     commands.spawn((
@@ -161,24 +150,4 @@ fn setup_world(
         },
         ..default()
     });
-}
-
-fn camera_control(
-    mut q_camera: Query<&mut Transform, With<Camera>>,
-    mut evr_mouse_motion: EventReader<MouseMotion>,
-) {
-    let sensitivity = 0.1;
-    let mut transform = q_camera.get_single_mut().unwrap();
-
-    for ev in evr_mouse_motion.read() {
-        let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-
-        yaw -= (ev.delta.x * sensitivity).to_radians();
-        pitch -= (ev.delta.y * sensitivity).to_radians();
-
-        pitch = pitch.clamp(-1.54, 1.54);
-
-        transform.rotation =
-            Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
-    }
 }
