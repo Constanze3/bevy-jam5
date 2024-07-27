@@ -18,7 +18,7 @@ fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Commands) {
     for bicycle_entity in q_bicycle.iter() {
         commands
             .entity(bicycle_entity)
-            .insert((RigidBody::Dynamic, UpPickable, Mass(7.0)))
+            .insert((RigidBody::Dynamic, UpPickable, Mass(6.0)))
             .with_children(|parent| {
                 parent.spawn(Collider::cuboid(1.7, 1.0, 0.2));
                 parent.spawn((

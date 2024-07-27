@@ -23,17 +23,17 @@ fn spawn(q_car: Query<Entity, Added<Car>>, mut commands: Commands) {
             ))
             .with_children(|parent| {
                 parent.spawn((
-                    Collider::cuboid(4.5, 0.8, 6.9),
+                    Collider::cuboid(4.5, 0.8, 7.0),
                     TransformBundle::from_transform(Transform::from_xyz(0.0, -0.81, 0.2)),
                 ));
 
                 parent.spawn((
-                    Collider::cuboid(4.5, 1.92, 2.0),
-                    TransformBundle::from_transform(Transform::from_xyz(0.0, 1.1, -2.2)),
+                    Collider::cuboid(4.5, 2.5, 2.2),
+                    TransformBundle::from_transform(Transform::from_xyz(0.0, 0.5, -2.2)),
                 ));
 
                 parent.spawn((
-                    Collider::cuboid(0.3, 0.63, 6.9),
+                    Collider::cuboid(0.3, 0.63, 7.0),
                     TransformBundle::from_transform(Transform::from_xyz(2.05, -0.1, 0.2)),
                 ));
 
@@ -47,13 +47,5 @@ fn spawn(q_car: Query<Entity, Added<Car>>, mut commands: Commands) {
                     TransformBundle::from_transform(Transform::from_xyz(0.0, -0.81, 3.65)),
                 ));
             });
-
-        //     .with_children(|parent| {
-        //         parent.spawn(Collider::cuboid(1.7, 1.0, 0.2));
-        //         parent.spawn((
-        //             Collider::cuboid(0.1, 0.1, 0.4),
-        //             TransformBundle::from_transform(Transform::from_xyz(0.27, 0.4, 0.0)),
-        //         ));
-        //     });
     }
 }

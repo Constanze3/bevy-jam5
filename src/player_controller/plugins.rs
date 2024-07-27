@@ -61,6 +61,7 @@ pub struct CharacterControllerBundle {
     player_name: Name,
     desired_direction: DesiredDirection,
     rider: Rider,
+    locked_axes: LockedAxes,
 }
 
 /// A bundle that contains components for character movement.
@@ -127,6 +128,7 @@ impl CharacterControllerBundle {
                 ride: None,
                 bottom_pos: Vec3::default(),
             },
+            locked_axes: LockedAxes::new().lock_rotation_x().lock_rotation_z(),
         }
     }
 
