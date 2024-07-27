@@ -1,5 +1,3 @@
-
-
 use asset_loading::AssetLoaderPlugin;
 use avian3d::{math::*, prelude::*};
 use bevy::{
@@ -9,15 +7,14 @@ use bevy::{
 use bevy_camera_extras::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
-use bevy_jam5::player_controller::*;
 use bevy_jam5::car_controller::*;
 use bevy_jam5::player_car_swap::*;
+use bevy_jam5::player_controller::*;
 use bevy_jam5::simulation_state::*;
+use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
 
 //use plugin::*;
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
-
 
 fn main() {
     App::new()
@@ -43,7 +40,7 @@ fn main() {
                     ..default()
                 }),
                 movement_settings_override: None,
-            }
+            },
         ))
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
@@ -55,8 +52,6 @@ fn main() {
         .insert_resource(MovementSettings::default())
         .run();
 }
-
-
 
 #[derive(States, Clone, PartialEq, Eq, Hash, Debug, Default)]
 enum TestSkyboxState {
