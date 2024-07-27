@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use avian3d::{math::*, prelude::*};
-use bevy_camera_extras::{CameraControls, CameraDistanceOffset};
 
-//use super::{cameras::*, simulation_state::*};
 use crate::{player_car_swap::{Ridable, Rider}, player_controller::{CollisionMask, Player}, simulation_state::*};
 
 pub struct CarControllerPlugin;
@@ -13,13 +11,10 @@ impl Plugin for CarControllerPlugin {
             .add_event::<MovementAction>()
             .add_systems(Startup, setup_car)
             .add_systems(Update, (
-                keyboard_input,
-                //free_camera_control,
                 keyboard_input.run_if(in_state(SimulationState::Running)),
                 movement.run_if(in_state(SimulationState::Running)),
                 apply_movement_damping,
                 make_car_float,
-                //camera_follow_car,
             ).chain());
     }
 }
@@ -198,7 +193,7 @@ fn setup_car(
 ) {
     let props = CarProperties::default();
 
-    let car = commands.spawn((
+    let _car = commands.spawn((
         Name::new("Car"),
         PbrBundle {
             mesh: meshes.add(Cuboid::new(props.dimensions.width, props.dimensions.height, props.dimensions.length)),
@@ -211,11 +206,6 @@ fn setup_car(
         Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
         Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
     )).id();
-
-    // commands.spawn(CameraControls {
-    //     attach_to: car,
-    //     camera_mode: bevy_camera_extras::CameraMode::ThirdPerson(CameraDistanceOffset::default())
-    // });
 }
 
 
