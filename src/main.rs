@@ -15,6 +15,7 @@ use bevy_camera_extras::{components::CameraControls, plugins::CameraExtrasPlugin
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use damping::{Pid, SmoothDamp, TransformPid};
+use player_controller::pick_up::UpPickable;
 use player_controller::plugins::*;
 use player_controller::*;
 
@@ -34,7 +35,7 @@ fn main() {
             CubemapFactoryPlugin,
             CharacterControllerPlugin,
             damping::reflect_plugin,
-            // PhysicsDebugPlugin::default(),
+            PhysicsDebugPlugin::default(),
         ))
         .add_systems(Startup, (setup_world).chain())
         .init_state::<TestSkyboxState>()
@@ -101,16 +102,6 @@ fn setup_world(
             CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
                 .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
         ))
-        .with_children(|parent| {
-            parent.spawn((
-                Name::new("Hand"),
-                TransformBundle {
-                    local: Transform::from_xyz(0.0, 1.0, -3.0),
-                    ..default()
-                },
-                Hand::default(),
-            ));
-        })
         .id();
 
     // camera
@@ -123,13 +114,6 @@ fn setup_world(
             attach_to: player,
             camera_mode: CameraMode::FirstPerson,
         },
-    ));
-
-    commands.spawn((
-        Name::new("Fake Hand"),
-        SpatialBundle::default(),
-        FakeHand,
-        SmoothDamp::new(3.0),
     ));
 
     // A cube to move around
