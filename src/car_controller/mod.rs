@@ -3,6 +3,7 @@ pub mod systems;
 pub mod components;
 pub mod resources;
 pub mod bundles;
+pub mod ui;
 
 pub use plugin::CarControllerPlugin;
 pub use components::CarController;

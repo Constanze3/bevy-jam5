@@ -4,7 +4,7 @@ use avian3d::{math::*, prelude::*};
 use crate::player_car_swap::Ridable;
 use crate::player_controller::CollisionMask;
 
-use super::components::*;
+use super::{components::*, CarProperties};
 
 #[derive(Bundle)]
 pub struct CarControllerBundle {
@@ -15,6 +15,7 @@ pub struct CarControllerBundle {
     pub movement: MovementBundle,
     pub collision_layers: CollisionLayers,
     pub ridable: Ridable,
+    pub fuel: Fuel,
 }
 
 #[derive(Bundle)]
@@ -33,6 +34,7 @@ impl MovementBundle {
         float_height: Scalar,
         float_amplitude: Scalar,
         float_period: Scalar,
+        gas_mileage: Scalar,
         pid: PID,
     ) -> Self {
         Self {
@@ -45,6 +47,7 @@ impl MovementBundle {
                 float_height,
                 float_amplitude,
                 float_period,
+                gas_mileage
             },
             pid,
         }
@@ -53,7 +56,7 @@ impl MovementBundle {
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(30.0, 20.0, 0.9, 0.75, 0.4, 3.0, PID::default())
+        Self::new(30.0, 20.0, 0.9, 0.75, 0.4, 3.0, 0.1, PID::default())
     }
 }
 
@@ -69,6 +72,7 @@ impl CarControllerBundle {
                 seat_offset: Transform::default(),
             },
             collision_layers: CollisionLayers::new(CollisionMask::Car, [CollisionMask::Player]),
+            fuel: Fuel::new(CarProperties::default().fuel_capacity),
         }
     }
 
@@ -80,6 +84,7 @@ impl CarControllerBundle {
         float_height: Scalar,
         float_amplitude: Scalar,
         float_period: Scalar,
+        gas_mileage: Scalar,
     ) -> Self {
         self.movement = MovementBundle::new(
             linear_acceleration,
@@ -88,6 +93,7 @@ impl CarControllerBundle {
             float_height,
             float_amplitude,
             float_period,
+            gas_mileage,
             PID::default(),
         );
         self

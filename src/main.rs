@@ -1,5 +1,5 @@
 use asset_loading::AssetLoaderPlugin;
-use avian3d::{math::*, prelude::*};
+use avian3d::prelude::*;
 use bevy::{
     core_pipeline::{prepass::NormalPrepass, Skybox},
     prelude::*,
@@ -13,7 +13,6 @@ use bevy_jam5::player_controller::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
 
-//use plugin::*;
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
 
 fn main() {

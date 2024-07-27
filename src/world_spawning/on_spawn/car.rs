@@ -23,7 +23,7 @@ fn spawn(q_car: Query<Entity, Added<Car>>, mut commands: Commands) {
                 props.dimensions.height,
                 props.dimensions.length,
             ))
-            .with_movement(30.0, 20.0, 0.92, 1.0, 0.3, 2.5),
+            .with_movement(30.0, 20.0, 0.92, 1.0, 0.3, 2.5, 0.2),
             Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
             Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
         ));
