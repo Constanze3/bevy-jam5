@@ -7,11 +7,11 @@ use bevy::{
 use bevy_camera_extras::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::car_controller::*;
 use bevy_jam5::player_car_swap::*;
 use bevy_jam5::player_controller::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
+use bevy_jam5::{car_controller::*, player_controller::pick_up::UpPickable};
 
 //use plugin::*;
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
