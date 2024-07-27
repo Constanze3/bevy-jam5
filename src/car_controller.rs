@@ -3,7 +3,7 @@ use avian3d::{math::*, prelude::*};
 use bevy_camera_extras::{CameraControls, CameraDistanceOffset};
 
 //use super::{cameras::*, simulation_state::*};
-use crate::{player_car_swap::{Ridable, Rider}, player_controller::CollisionMask, simulation_state::*};
+use crate::{player_car_swap::{Ridable, Rider}, player_controller::{CollisionMask, Player}, simulation_state::*};
 
 pub struct CarControllerPlugin;
 
@@ -15,12 +15,10 @@ impl Plugin for CarControllerPlugin {
             .add_systems(Update, (
                 keyboard_input,
                 //free_camera_control,
-                movement,
                 keyboard_input.run_if(in_state(SimulationState::Running)),
                 movement.run_if(in_state(SimulationState::Running)),
                 apply_movement_damping,
-                //FIXME: commented out until this doesnt glitch the car out of the map
-                //make_car_float,
+                make_car_float,
                 //camera_follow_car,
             ).chain());
     }
@@ -94,9 +92,9 @@ pub struct PID {
 impl Default for PID {
     fn default() -> Self {
         Self { 
-            kp: 1.0,
-            ki: 1.0,
-            kd: 1.0,
+            kp: 5.0,
+            ki: 0.5,
+            kd: 0.05,
 
             integral: 0.0,
             previous_error: 0.0,
@@ -153,8 +151,8 @@ impl Default for MovementBundle {
             30.0,
             20.0,
             0.9,
-            1.0,
-            0.5,
+            0.75,
+            0.4,
             3.0,
             PID::default(),
         )
@@ -201,6 +199,7 @@ fn setup_car(
     let props = CarProperties::default();
 
     let car = commands.spawn((
+        Name::new("Car"),
         PbrBundle {
             mesh: meshes.add(Cuboid::new(props.dimensions.width, props.dimensions.height, props.dimensions.length)),
             material: materials.add(Color::srgb_u8(124, 144, 255)),
@@ -208,18 +207,15 @@ fn setup_car(
             ..default()
         },
         CarControllerBundle::new(Collider::cuboid(props.dimensions.width, props.dimensions.height, props.dimensions.length))
-            .with_movement(30.0, 20.0, 0.92, 1.5, 0.75, 2.5),
+            .with_movement(30.0, 20.0, 0.92, 1.0, 0.3, 2.5),
         Friction::ZERO.with_combine_rule(CoefficientCombine::Min),
         Restitution::ZERO.with_combine_rule(CoefficientCombine::Min),
-        GravityScale(2.0),
-        Name::new("car"),
     )).id();
 
     // commands.spawn(CameraControls {
     //     attach_to: car,
     //     camera_mode: bevy_camera_extras::CameraMode::ThirdPerson(CameraDistanceOffset::default())
     // });
-
 }
 
 
@@ -265,7 +261,6 @@ fn movement(
         rider_transform.rotation = car_transform.rotation + ride_info.seat_offset.rotation;
 
         let car_forward = car_transform.forward();
-
     
         for event in movement_event_reader.read() {
             for (acceleration, mut linear_velocity, mut angular_velocity) in
@@ -295,27 +290,26 @@ fn make_car_float(
         &mut LinearVelocity,
     )>,
     q_car_transform: Query<&Transform, With<CarController>>,
-    spatial_query: SpatialQuery
+    q_entities: Query<(Option<&Player>, Option<&CarController>)>,
+    spatial_query: SpatialQuery,
 ) {
     let car_transform = q_car_transform.single();
-    let car_props = CarProperties::default();
 
     for (behaviour, mut pid, mut linear_velocity) in &mut controllers
     {
-        // 0.01 puts the tracer just outside the chassis of the car, guaranteeing no clipping.
-        let distance_middlepoint_to_undercar = 0.01 + car_props.dimensions.height / 2.0;
-        let ray_origin = car_transform.translation - Vec3::Y * distance_middlepoint_to_undercar;
-
-        if let Some(hit) = spatial_query.cast_ray(
-            ray_origin,
+        if let Some(hit) = spatial_query.cast_ray_predicate(
+            car_transform.translation,
             Dir3::NEG_Y,
             2.0 * behaviour.float_amplitude + behaviour.float_height,
             true,
             SpatialQueryFilter::default(),
+            &|entity| {
+                let (player, car) = q_entities.get(entity).unwrap();
+                return player.is_none() && car.is_none();
+            }
         ) {
             let desired_height = f32::sin(time.elapsed_seconds() * behaviour.float_period) * behaviour.float_amplitude + behaviour.float_height;
-            let actual_height = hit.time_of_impact + distance_middlepoint_to_undercar;
-            linear_velocity.y = pid.compute(desired_height, actual_height, time.delta_seconds());
+            linear_velocity.y = pid.compute(desired_height, hit.time_of_impact, time.delta_seconds());
         }
     }
 }
