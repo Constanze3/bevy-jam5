@@ -2,6 +2,7 @@ use bevy::prelude::States;
 
 pub mod asset_loading;
 pub mod world_spawning;
+pub mod lockpicking;
 
 pub mod player_controller;
 pub mod player_car_swap;
