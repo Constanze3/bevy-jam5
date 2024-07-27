@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use avian3d::{math::*, prelude::*};
+use bevy::prelude::*;
 
 use crate::player_car_swap::Ridable;
 use crate::player_controller::CollisionMask;
@@ -10,7 +10,6 @@ use super::components::*;
 pub struct CarControllerBundle {
     pub car_controller: CarController,
     pub rigid_body: RigidBody,
-    pub collider: Collider,
     pub locked_axes: LockedAxes,
     pub movement: MovementBundle,
     pub collision_layers: CollisionLayers,
@@ -58,15 +57,14 @@ impl Default for MovementBundle {
 }
 
 impl CarControllerBundle {
-    pub fn new(collider: Collider) -> Self {
+    pub fn new() -> Self {
         Self {
             car_controller: CarController,
             rigid_body: RigidBody::Dynamic,
-            collider,
             locked_axes: LockedAxes::new().lock_rotation_x().lock_rotation_z(),
             movement: MovementBundle::default(),
             ridable: Ridable {
-                seat_offset: Transform::default(),
+                seat_offset: Transform::from_xyz(0.0, 100.0, 0.0),
             },
             collision_layers: CollisionLayers::new(CollisionMask::Car, [CollisionMask::Player]),
         }

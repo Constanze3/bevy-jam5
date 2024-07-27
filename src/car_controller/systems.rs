@@ -1,8 +1,9 @@
-use bevy::prelude::*;
 use avian3d::{math::*, prelude::*};
+use bevy::prelude::*;
 
 use crate::player_car_swap::{Ridable, Rider};
 use crate::player_controller::Player;
+use crate::world_spawning::on_spawn::MapElement;
 
 use super::components::*;
 use super::resources::*;
@@ -79,7 +80,7 @@ pub fn make_car_float(
     time: Res<Time>,
     mut controllers: Query<(&CarBehaviour, &mut PID, &mut LinearVelocity)>,
     q_car_transform: Query<&Transform, With<CarController>>,
-    q_entities: Query<(Option<&Player>, Option<&CarController>)>,
+    q_entities: Query<(Option<&Parent>, Option<&MapElement>)>,
     spatial_query: SpatialQuery,
 ) {
     let car_transform = q_car_transform.single();
@@ -92,8 +93,16 @@ pub fn make_car_float(
             true,
             SpatialQueryFilter::default(),
             &|entity| {
-                let (player, car) = q_entities.get(entity).unwrap();
-                return player.is_none() && car.is_none();
+                let (parent, _) = q_entities.get(entity).unwrap();
+
+                let parent_entity = if let Some(parent) = parent {
+                    parent.get()
+                } else {
+                    return false;
+                };
+
+                let (_, map_element) = q_entities.get(parent_entity).unwrap();
+                map_element.is_some()
             },
         ) {
             let desired_height = f32::sin(time.elapsed_seconds() * behaviour.float_period)
