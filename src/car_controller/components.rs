@@ -63,4 +63,12 @@ impl Fuel {
     pub fn new(capacity: f32) -> Self {
         Self { capacity, level: capacity }
     }
+
+    pub fn refuel(&mut self, amount: Option<f32>) -> &Self {
+        self.level = match amount {
+            Some(a) => self.capacity.min(a),
+            None => self.capacity,
+        };
+        return self;
+    }
 }
