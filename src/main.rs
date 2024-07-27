@@ -7,11 +7,11 @@ use bevy::{
 use bevy_camera_extras::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_jam5::car_controller::*;
 use bevy_jam5::player_car_swap::*;
 use bevy_jam5::player_controller::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
-use bevy_jam5::{car_controller::*, player_controller::pick_up::UpPickable};
 
 //use plugin::*;
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
@@ -41,10 +41,11 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
+            // PhysicsDebugPlugin::default(),
         ))
+        .insert_resource(SubstepCount(500))
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
-        .add_systems(Startup, setup_world)
         .init_state::<TestSkyboxState>()
         .add_systems(
             Update,
@@ -85,69 +86,4 @@ fn test_skybox(
     ));
 
     next_state.set(TestSkyboxState::Done);
-}
-
-fn setup_world(
-    mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    // // Player
-    // let player = commands.spawn((
-    //     PbrBundle {
-    //         mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
-    //         material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-    //         transform: Transform::from_xyz(0.0, 1.5, 0.0),
-    //         ..default()
-    //     },
-    //     CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
-    //         .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
-    // )).id();
-
-    // A cube to move around
-    commands.spawn((
-        UpPickable,
-        Name::new("Cube"),
-        RigidBody::Dynamic,
-        Collider::cuboid(1.0, 1.0, 1.0),
-        PbrBundle {
-            mesh: meshes.add(Cuboid::default()),
-            material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-            transform: Transform::from_xyz(3.0, 2.0, 3.0),
-            ..default()
-        },
-    ));
-
-    // Environment (see the `collider_constructors` example for creating colliders from scenes)
-    commands.spawn((
-        SceneBundle {
-            scene: assets.load("town.glb#Scene0"),
-            transform: Transform::default(),
-            ..default()
-        },
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-        RigidBody::Static,
-    ));
-
-    commands.insert_resource(AmbientLight {
-        color: Color::srgb_u8(182, 205, 214),
-        brightness: 500.0,
-    });
-
-    commands.insert_resource(AmbientLight::default());
-
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance: light_consts::lux::OVERCAST_DAY,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_euler(EulerRot::XYZ, 4.0, -0.7, 0.0),
-            ..default()
-        },
-        ..default()
-    });
 }

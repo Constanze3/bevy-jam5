@@ -15,6 +15,7 @@ fn interact(
     keys: Res<ButtonInput<KeyCode>>,
     query: SpatialQuery,
     q_camera: Query<&Transform, With<Camera>>,
+    q_parent: Query<Option<&Parent>>,
     q_entities: Query<(Entity, Option<&Player>, Option<&UpPickable>), Without<Camera>>,
     mut pick_up_ew: EventWriter<PickUpEvent>,
 ) {
@@ -27,7 +28,7 @@ fn interact(
         let Some(hit) = query.cast_ray_predicate(
             origin,
             direction,
-            100.0,
+            5.0,
             true,
             SpatialQueryFilter::default(),
             &|entity| q_entities.get(entity).unwrap().1.is_none(),
@@ -35,7 +36,12 @@ fn interact(
             return;
         };
 
-        let (entity, _, up_pickable) = q_entities.get(hit.entity).unwrap();
+        let Some(parent) = q_parent.get(hit.entity).unwrap() else {
+            return;
+        };
+        let parent_entity = parent.get();
+
+        let (entity, _, up_pickable) = q_entities.get(parent_entity).unwrap();
 
         if up_pickable.is_some() {
             pick_up_ew.send(PickUpEvent(entity));

@@ -1,8 +1,8 @@
 use avian3d::{
     collision::{Collider, Sensor},
-    dynamics::rigid_body::{ExternalForce, RigidBody},
+    dynamics::rigid_body::{AngularVelocity, ExternalForce, Inertia, LinearVelocity, RigidBody},
 };
-use bevy::{ecs::system::QueryLens, prelude::*};
+use bevy::{ecs::system::QueryLens, math::VectorSpace, prelude::*};
 
 use super::*;
 use crate::player_controller::Player;
@@ -30,7 +30,7 @@ impl Default for HandConfig {
     fn default() -> Self {
         Self {
             offset: Vec3::new(0.0, 0.0, -1.5),
-            throw_force: 600.0,
+            throw_force: 3000.0,
         }
     }
 }
@@ -59,11 +59,17 @@ fn pick_up(
     mut pick_up_er: EventReader<PickUpEvent>,
     mut hand: ResMut<Hand>,
     mut q_object: Query<(
-        &mut RigidBody,
         &mut Visibility,
-        &Handle<Mesh>,
-        &Handle<StandardMaterial>,
-        &Collider,
+        &mut RigidBody,
+        &mut LinearVelocity,
+        &mut AngularVelocity,
+        &Children,
+    )>,
+    q_child: Query<(
+        &Transform,
+        Option<&Handle<Mesh>>,
+        Option<&Handle<StandardMaterial>>,
+        Option<&Collider>,
     )>,
     q_player: Query<(Entity, &GlobalTransform), With<Player>>,
     q_camera: Query<&GlobalTransform, (With<Camera>, Without<Player>)>,
@@ -76,14 +82,14 @@ fn pick_up(
 
     for ev in pick_up_er.read() {
         let entity = ev.0;
-
-        let (mut rigidbody, mut visibility, mesh, material, collider) =
+        let (mut visibility, mut rigidbody, mut linear_velocity, mut angular_velocity, children) =
             q_object.get_mut(entity).unwrap();
 
-        *rigidbody = RigidBody::Static;
         *visibility = Visibility::Hidden;
+        *rigidbody = RigidBody::Static;
 
-        commands.entity(entity).insert(Sensor);
+        linear_velocity.0 = Vec3::ZERO;
+        angular_velocity.0 = Vec3::ZERO;
 
         let (player_entity, player_gtranform) = q_player.get_single().unwrap();
         let camera_gtransform = q_camera.get_single().unwrap();
@@ -94,30 +100,51 @@ fn pick_up(
             0.0,
         );
 
-        let collider = commands
-            .spawn((
-                TransformBundle {
-                    local: Transform::from_translation(height_offset + config.offset),
-                    ..default()
-                },
-                collider.clone(),
-            ))
-            .id();
+        let visual_parent = commands.spawn(SpatialBundle::default()).id();
 
-        commands.entity(player_entity).add_child(collider);
-
-        let visual = commands
-            .spawn(PbrBundle {
-                mesh: mesh.clone(),
-                material: material.clone(),
+        let collider_parent = commands
+            .spawn(TransformBundle {
+                local: Transform::from_translation(height_offset + config.offset),
                 ..default()
             })
             .id();
 
+        for child_entity in children.iter() {
+            let (transform, mesh, material, collider) = q_child.get(*child_entity).unwrap();
+
+            if let Some(collider) = collider {
+                commands.entity(collider_parent).with_children(|parent| {
+                    parent.spawn((
+                        TransformBundle {
+                            local: transform.clone(),
+                            ..default()
+                        },
+                        collider.clone(),
+                    ));
+                });
+            }
+
+            if let Some(mesh) = mesh {
+                if let Some(material) = material {
+                    commands.entity(visual_parent).with_children(|parent| {
+                        parent.spawn(PbrBundle {
+                            mesh: mesh.clone(),
+                            material: material.clone(),
+                            ..default()
+                        });
+                    });
+                }
+            }
+
+            commands.entity(*child_entity).insert(Sensor);
+        }
+
+        commands.entity(player_entity).add_child(collider_parent);
+
         *hand = Hand::Some {
             entity,
-            collider,
-            visual,
+            collider: collider_parent,
+            visual: visual_parent,
         };
 
         return;
@@ -144,7 +171,12 @@ fn move_visual(
 
 fn release(
     mut hand: ResMut<Hand>,
-    mut ql_object: QueryLens<(&mut Transform, Option<&mut RigidBody>, &mut Visibility)>,
+    mut ql_object: QueryLens<(
+        &mut Transform,
+        Option<&mut RigidBody>,
+        &mut Visibility,
+        &Children,
+    )>,
     mut commands: Commands,
 ) -> Option<Entity> {
     let Hand::Some {
@@ -158,10 +190,10 @@ fn release(
 
     let mut q_object = ql_object.query();
 
-    let (visual_transform, _, _) = q_object.get(visual).unwrap();
+    let (visual_transform, _, _, _) = q_object.get(visual).unwrap();
     let visual_transform = visual_transform.clone();
 
-    let (mut transform, rigidbody, mut visibility) = q_object.get_mut(entity).unwrap();
+    let (mut transform, rigidbody, mut visibility, children) = q_object.get_mut(entity).unwrap();
     let mut rigidbody = rigidbody.unwrap();
 
     transform.translation = visual_transform.translation;
@@ -173,7 +205,9 @@ fn release(
     *visibility = Visibility::Inherited;
     *rigidbody = RigidBody::Dynamic;
 
-    commands.entity(entity).remove::<Sensor>();
+    for child_entity in children {
+        commands.entity(*child_entity).remove::<Sensor>();
+    }
 
     *hand = Hand::Empty;
 
@@ -183,7 +217,12 @@ fn release(
 fn drop(
     buttons: Res<ButtonInput<MouseButton>>,
     hand: ResMut<Hand>,
-    mut q_object: Query<(&mut Transform, Option<&mut RigidBody>, &mut Visibility)>,
+    mut q_object: Query<(
+        &mut Transform,
+        Option<&mut RigidBody>,
+        &mut Visibility,
+        &Children,
+    )>,
     commands: Commands,
 ) {
     if buttons.just_pressed(MouseButton::Right) {
@@ -201,6 +240,7 @@ fn throw(
             &mut Transform,
             Option<&mut RigidBody>,
             &mut Visibility,
+            &Children,
             Option<&mut ExternalForce>,
         ),
         Without<Camera>,
@@ -210,12 +250,17 @@ fn throw(
     if buttons.just_pressed(MouseButton::Left) {
         let released = release(
             hand,
-            q_object.transmute_lens::<(&mut Transform, Option<&mut RigidBody>, &mut Visibility)>(),
+            q_object.transmute_lens::<(
+                &mut Transform,
+                Option<&mut RigidBody>,
+                &mut Visibility,
+                &Children,
+            )>(),
             commands,
         );
 
         if let Some(entity) = released {
-            let mut external_force = q_object.get_mut(entity).unwrap().3.unwrap();
+            let mut external_force = q_object.get_mut(entity).unwrap().4.unwrap();
             let camera_transform = q_camera.get_single().unwrap();
 
             external_force.set_force(camera_transform.forward() * config.throw_force);

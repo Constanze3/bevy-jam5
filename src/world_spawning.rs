@@ -1,17 +1,21 @@
-use avian3d::{math::*, prelude::{Collider, RigidBody}};
+use avian3d::{
+    math::*,
+    prelude::{Collider, RigidBody},
+};
 use bevy::{
     ecs::system::EntityCommands,
     gltf::{GltfMesh, GltfNode},
-    prelude::*
+    pbr::{NotShadowCaster, NotShadowReceiver},
+    prelude::*,
 };
 use bevy_camera_extras::*;
 
-use crate::*;
 use crate::player_controller::*;
+use crate::*;
 
 mod on_spawn;
 
-use self::asset_loading::GltfAssets;
+use self::{asset_loading::GltfAssets, pick_up::UpPickable};
 use on_spawn::*;
 
 // Marker components can be attached with the SpawnHook based on a function that is provided with the
@@ -120,8 +124,8 @@ pub fn spawn_after_world(
 ) {
     // ambient light
     commands.insert_resource(AmbientLight {
-        color: Color::srgb_u8(182, 205, 214),
-        brightness: 500.0,
+        color: Color::srgb_u8(224, 208, 208),
+        brightness: 400.0,
     });
 
     // sunlight
@@ -151,6 +155,8 @@ pub fn spawn_after_world(
             },
             CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
                 .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+            NotShadowCaster,
+            NotShadowReceiver,
         ))
         .id();
 
@@ -162,19 +168,28 @@ pub fn spawn_after_world(
         },
         CameraControls {
             attach_to: player,
-            camera_mode: CameraMode::FirstPerson
+            camera_mode: CameraMode::FirstPerson,
         },
     ));
 
     // a cube to move around
-    commands.spawn((
-        RigidBody::Dynamic,
-        Collider::cuboid(1.0, 1.0, 1.0),
-        PbrBundle {
-            mesh: meshes.add(Cuboid::default()),
-            material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-            transform: Transform::from_xyz(3.0, 2.0, 3.0),
-            ..default()
-        },
-    ));
+    commands
+        .spawn((
+            SpatialBundle {
+                transform: Transform::from_xyz(3.0, 2.0, 3.0),
+                ..default()
+            },
+            RigidBody::Dynamic,
+            UpPickable,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                PbrBundle {
+                    mesh: meshes.add(Cuboid::default()),
+                    material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
+                    ..default()
+                },
+                Collider::cuboid(1.0, 1.0, 1.0),
+            ));
+        });
 }

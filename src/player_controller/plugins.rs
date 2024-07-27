@@ -5,12 +5,13 @@ use bevy::prelude::*;
 use crate::player_car_swap::Rider;
 
 use super::*;
+use interaction;
 
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.add_plugins(interaction::plugin)
             //.add_event::<MovementAction>()
             .insert_resource(PlayerControls::default())
             .insert_resource(PlayerSettings::default())

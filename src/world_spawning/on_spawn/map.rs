@@ -1,5 +1,8 @@
 use crate::*;
-use avian3d::prelude::{Collider, RigidBody};
+use avian3d::{
+    dynamics::rigid_body::Friction,
+    prelude::{Collider, RigidBody},
+};
 use bevy::prelude::*;
 
 #[derive(Resource)]
