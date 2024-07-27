@@ -1,6 +1,7 @@
 mod cameras;
 mod car_controller;
 mod cubemap_factory;
+mod damping;
 mod player_controller;
 mod resources;
 mod simulation_state;
@@ -13,6 +14,7 @@ use bevy_camera_extras::CameraMode;
 use bevy_camera_extras::{components::CameraControls, plugins::CameraExtrasPlugin};
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use damping::{Pid, SmoothDamp, TransformPid};
 use player_controller::plugins::*;
 use player_controller::*;
 
@@ -31,7 +33,8 @@ fn main() {
             WorldInspectorPlugin::new(),
             CubemapFactoryPlugin,
             CharacterControllerPlugin,
-            PhysicsDebugPlugin::default(),
+            damping::reflect_plugin,
+            // PhysicsDebugPlugin::default(),
         ))
         .add_systems(Startup, (setup_world).chain())
         .init_state::<TestSkyboxState>()
@@ -44,8 +47,8 @@ fn main() {
             keybinds_override: None,
             movement_settings_override: None,
         })
-        //.add_systems(Update, close_on_esc)
         .insert_resource(MovementSettings::default())
+        // .add_systems(FixedUpdate, camera_control)
         .run();
 }
 
@@ -101,11 +104,11 @@ fn setup_world(
         .with_children(|parent| {
             parent.spawn((
                 Name::new("Hand"),
-                SpatialBundle {
-                    transform: Transform::from_xyz(0.0, 0.0, -1.0),
+                TransformBundle {
+                    local: Transform::from_xyz(0.0, 0.0, -3.0),
                     ..default()
                 },
-                Hand,
+                Hand::default(),
             ));
         })
         .id();
@@ -120,6 +123,13 @@ fn setup_world(
             attach_to: player,
             camera_mode: CameraMode::FirstPerson,
         },
+    ));
+
+    commands.spawn((
+        Name::new("Fake Hand"),
+        TransformBundle::default(),
+        FakeHand,
+        SmoothDamp::new(3.0),
     ));
 
     // A cube to move around
@@ -169,37 +179,22 @@ fn setup_world(
     });
 }
 
-// #[derive(Component)]
-// struct MainCamera;
+fn camera_control(
+    mut q_camera: Query<&mut Transform, With<Camera>>,
+    mut evr_mouse_motion: EventReader<MouseMotion>,
+) {
+    let sensitivity = 0.1;
+    let mut transform = q_camera.get_single_mut().unwrap();
 
-// #[derive(Resource)]
-// struct MovementSettings {
-//     sensitivity: f32,
-// }
+    for ev in evr_mouse_motion.read() {
+        let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
 
-// impl Default for MovementSettings {
-//     fn default() -> Self {
-//         return Self { sensitivity: 0.1 };
-//     }
-// }
+        yaw -= (ev.delta.x * sensitivity).to_radians();
+        pitch -= (ev.delta.y * sensitivity).to_radians();
 
-// fn camera_control(
-//     //mut q_camera: Query<&mut Transform, With<MainCamera>>,
-//     mut evr_mouse_motion: EventReader<MouseMotion>,
-//     movement_settings: Res<MovementSettings>,
-// ) {
-//     let sensitivity = movement_settings.sensitivity;
+        pitch = pitch.clamp(-1.54, 1.54);
 
-//     let mut transform = q_camera.get_single_mut().unwrap();
-//     for ev in evr_mouse_motion.read() {
-//         let (mut yaw, mut pitch, _) = transform.rotation.to_euler(EulerRot::YXZ);
-
-//         yaw -= (ev.delta.x * sensitivity).to_radians();
-//         pitch -= (ev.delta.y * sensitivity).to_radians();
-
-//         pitch = pitch.clamp(-1.54, 1.54);
-
-//         transform.rotation =
-//             Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
-//     }
-// }
+        transform.rotation =
+            Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+    }
+}
