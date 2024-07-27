@@ -87,9 +87,9 @@ pub struct PID {
 impl Default for PID {
     fn default() -> Self {
         Self { 
-            kp: 5.0,
-            ki: 0.5,
-            kd: 0.05,
+            kp: 2.5,
+            ki: 0.25,
+            kd: 0.025,
 
             integral: 0.0,
             previous_error: 0.0,
@@ -242,10 +242,10 @@ fn movement(
 ) {
     // only drive cars that are being riden
     for (ride, mut rider_transform) in riders.iter_mut()
-    .filter(|(rider, ..)| rider.ride.is_some())
-    .map(|(rider, trans)| (rider.ride.unwrap(), trans)) {
-        let Ok((car_transform, ride_info)) = q_car_transform.get(ride) else {return};
-
+        .filter(|(rider, ..)| rider.ride.is_some())
+        .map(|(rider, trans)| (rider.ride.unwrap(), trans))
+    {
+        let Ok((car_transform, ride_info)) = q_car_transform.get(ride) else { return };
 
         rider_transform.translation = car_transform.translation + ride_info.seat_offset.translation;
         rider_transform.rotation = car_transform.rotation + ride_info.seat_offset.rotation;
@@ -268,8 +268,6 @@ fn movement(
             }
         }
     }
-    
-
 }
 
 fn make_car_float(
