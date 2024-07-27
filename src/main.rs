@@ -41,7 +41,9 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
+            // PhysicsDebugPlugin::default(),
         ))
+        .insert_resource(SubstepCount(500))
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
         .init_state::<TestSkyboxState>()
