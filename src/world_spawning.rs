@@ -13,7 +13,7 @@ use bevy_camera_extras::*;
 use crate::player_controller::*;
 use crate::*;
 
-mod on_spawn;
+pub mod on_spawn;
 
 use self::{asset_loading::GltfAssets, pick_up::UpPickable};
 use on_spawn::*;
@@ -52,6 +52,9 @@ impl Default for SpawnHook {
             match class {
                 "Bicycle" => {
                     commands.insert(Bicycle);
+                }
+                "Car" => {
+                    commands.insert(Car);
                 }
                 _ => {
                     commands.insert(MapElement);

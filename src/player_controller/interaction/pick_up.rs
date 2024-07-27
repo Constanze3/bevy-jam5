@@ -88,8 +88,8 @@ fn pick_up(
         *visibility = Visibility::Hidden;
         *rigidbody = RigidBody::Static;
 
-        linear_velocity.0 = Vec3::ZERO;
-        angular_velocity.0 = Vec3::ZERO;
+        // linear_velocity.0 = Vec3::ZERO;
+        // angular_velocity.0 = Vec3::ZERO;
 
         let (player_entity, player_gtranform) = q_player.get_single().unwrap();
         let camera_gtransform = q_camera.get_single().unwrap();
