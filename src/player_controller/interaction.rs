@@ -1,20 +1,16 @@
+use crate::damping::SmoothDamp;
 use avian3d::{
     collision::Collider,
-    dynamics::{
-        rigid_body::{AngularVelocity, ExternalForce, LinearVelocity, RigidBody},
-        solver::joints::{FixedJoint, Joint},
-    },
-    math::Vector,
+    dynamics::rigid_body::{ExternalForce, RigidBody},
     spatial_query::{SpatialQuery, SpatialQueryFilter},
 };
-use bevy::{math::VectorSpace, prelude::*};
-
-use crate::damping::{smooth_damp, Pid, SmoothDamp, TransformPid};
+use bevy::prelude::*;
 
 use super::Player;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<ThrowForce>()
+        .register_type::<ThrowForce>()
         .add_event::<PickUpEvent>()
         .add_systems(Update, ((interact, pick_up).chain(), throw))
         .add_systems(PostUpdate, move_fake_hand);
@@ -34,31 +30,22 @@ pub struct FakeHand;
 
 fn move_fake_hand(
     q_camera: Query<&Transform, With<Camera>>,
-    mut q_fake_hand: Query<(&mut Transform, &mut SmoothDamp), (With<FakeHand>, Without<Camera>)>,
-    time: Res<Time>,
+    mut q_fake_hand: Query<&mut Transform, (With<FakeHand>, Without<Camera>)>,
 ) {
     let camera_transform = q_camera.get_single().unwrap();
 
-    for (mut transform, mut damp) in q_fake_hand.iter_mut() {
-        let delta_time = time.delta_seconds();
-
+    for mut transform in q_fake_hand.iter_mut() {
         let cf = camera_transform.forward();
         let forward = Vec3::new(cf.x, 0.0, cf.z).normalize();
 
-        let translation = transform.translation;
         let target_translation = camera_transform.translation + forward * 1.7;
-
-        // damp.calculate(translation, target_translation, delta_time);
-
         transform.translation = Vec3::new(
             target_translation.x,
             camera_transform.translation.y - 0.2,
             target_translation.z,
         );
 
-        let yaw = transform.rotation.to_euler(EulerRot::YXZ).0;
         let target_yaw = camera_transform.rotation.to_euler(EulerRot::YXZ).0;
-
         transform.rotation = Quat::from_rotation_y(target_yaw);
     }
 }
@@ -142,44 +129,55 @@ fn pick_up(
 }
 
 #[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct ThrowForce(f32);
 
 impl Default for ThrowForce {
     fn default() -> Self {
-        return Self(4.0);
+        return Self(600.0);
     }
 }
 
 fn throw(
     buttons: Res<ButtonInput<MouseButton>>,
-    // q_joint: Query<Entity, With<HandJoint>>,
-    // mut q_child: Query<&mut ExternalForce>,
-    // q_camera: Query<&Transform, With<Camera>>,
-    // throw_force: Res<ThrowForce>,
+    mut q_hand: Query<(Entity, &mut Hand)>,
+    q_fake_hand: Query<(Entity, &Transform), With<FakeHand>>,
+    mut q_object: Query<
+        (
+            &mut Transform,
+            &mut RigidBody,
+            &mut Visibility,
+            &mut ExternalForce,
+        ),
+        (Without<FakeHand>, Without<Camera>),
+    >,
+    q_camera: Query<&Transform, (With<Camera>, Without<FakeHand>)>,
+    throw_force: Res<ThrowForce>,
     mut commands: Commands,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        // for joint_entity in q_joint.iter() {
-        //     commands.entity(joint_entity).despawn_recursive();
-        // }
-        // let Some(children) = q_hand.get_single().unwrap() else {
-        //     return;
-        // };
+        let (hand_entity, mut hand) = q_hand.get_single_mut().unwrap();
+        if let Some(entity) = hand.0 {
+            let (fake_hand_entity, fake_hand_transform) = q_fake_hand.get_single().unwrap();
 
-        // let child = children.first().unwrap();
+            let (mut transform, mut rigidbody, mut visibility, mut external_force) =
+                q_object.get_mut(entity).unwrap();
 
-        // commands
-        //     .entity(*child)
-        //     .remove_parent_in_place()
-        //     .insert(RigidBody::Dynamic);
+            commands.entity(hand_entity).despawn_descendants();
+            commands.entity(fake_hand_entity).despawn_descendants();
 
-        // let mut external_force = q_child.get_mut(*child).unwrap();
-        // let camera_transform = q_camera.get_single().unwrap();
+            transform.translation = fake_hand_transform.translation;
+            transform.rotation = fake_hand_transform.rotation;
 
-        // let direction = camera_transform.forward();
-        // let magnitude = throw_force.0;
+            *visibility = Visibility::Inherited;
+            *rigidbody = RigidBody::Dynamic;
 
-        // external_force.apply_force(direction * magnitude);
-        // external_force.persistent = false;
+            let camera_transform = q_camera.get_single().unwrap();
+
+            external_force.set_force(camera_transform.forward() * throw_force.0);
+            external_force.persistent = false;
+
+            hand.0 = None;
+        }
     }
 }

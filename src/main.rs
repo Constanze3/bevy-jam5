@@ -105,7 +105,7 @@ fn setup_world(
             parent.spawn((
                 Name::new("Hand"),
                 TransformBundle {
-                    local: Transform::from_xyz(0.0, 0.0, -3.0),
+                    local: Transform::from_xyz(0.0, 1.0, -3.0),
                     ..default()
                 },
                 Hand::default(),
@@ -127,7 +127,7 @@ fn setup_world(
 
     commands.spawn((
         Name::new("Fake Hand"),
-        TransformBundle::default(),
+        SpatialBundle::default(),
         FakeHand,
         SmoothDamp::new(3.0),
     ));
