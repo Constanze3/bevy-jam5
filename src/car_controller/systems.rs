@@ -39,6 +39,7 @@ pub fn movement(
         &MovementAcceleration,
         &mut LinearVelocity,
         &mut AngularVelocity,
+        &Fuel,
     )>,
     mut riders: Query<(&Rider, &mut Transform), Without<CarController>>,
     q_car_transform: Query<(&Transform, &Ridable), With<CarController>>,
@@ -59,16 +60,18 @@ pub fn movement(
         let car_forward = car_transform.forward();
 
         for event in movement_event_reader.read() {
-            for (acceleration, mut linear_velocity, mut angular_velocity) in &mut controllers {
-                match event {
-                    MovementAction::Move(speed) => {
-                        linear_velocity.x +=
-                            car_forward.x * speed * acceleration.linear * time.delta_seconds();
-                        linear_velocity.z +=
-                            car_forward.z * speed * acceleration.linear * time.delta_seconds();
-                    }
-                    MovementAction::Turn(speed) => {
-                        angular_velocity.y += speed * acceleration.angular * time.delta_seconds();
+            for (acceleration, mut linear_velocity, mut angular_velocity, fuel) in &mut controllers {
+                if fuel.level > 0.0 {
+                    match event {
+                        MovementAction::Move(speed) => {
+                            linear_velocity.x +=
+                                car_forward.x * speed * acceleration.linear * time.delta_seconds();
+                            linear_velocity.z +=
+                                car_forward.z * speed * acceleration.linear * time.delta_seconds();
+                        }
+                        MovementAction::Turn(speed) => {
+                            angular_velocity.y += speed * acceleration.angular * time.delta_seconds();
+                        }
                     }
                 }
             }
@@ -125,5 +128,19 @@ pub fn apply_movement_damping(
         linear_velocity.x *= damping_factor.0;
         linear_velocity.z *= damping_factor.0;
         angular_velocity.y *= damping_factor.0;
+    }
+}
+
+pub fn decrement_fuel(
+    time: Res<Time>,
+    q_car_behaviour: Query<&CarBehaviour, With<CarController>>,
+    mut q_fuel: Query<&mut Fuel>,
+) {
+    for car_behaviour in &q_car_behaviour {
+        for mut fuel in &mut q_fuel {
+            if fuel.level <= 0.0 { return; }
+            fuel.level = f32::max(fuel.level - time.delta_seconds() * car_behaviour.gas_mileage, 0.0);
+            println!("Fuel level: {}", fuel.level);
+        }
     }
 }

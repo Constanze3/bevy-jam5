@@ -6,6 +6,7 @@ pub struct CarBehaviour {
     pub float_height: Scalar,
     pub float_amplitude: Scalar,
     pub float_period: Scalar,
+    pub gas_mileage: Scalar, // The lower the better
 }
 
 #[derive(Component)]
@@ -49,5 +50,25 @@ impl PID {
         let derivative = (error - self.previous_error) / delta_time;
         self.previous_error = error;
         return self.kp * error + self.ki * self.integral + self.kd * derivative;
+    }
+}
+
+#[derive(Component)]
+pub struct Fuel {
+    pub capacity: f32,
+    pub level: f32,
+}
+
+impl Fuel {
+    pub fn new(capacity: f32) -> Self {
+        Self { capacity, level: capacity }
+    }
+
+    pub fn refuel(&mut self, amount: Option<f32>) -> &Self {
+        self.level = match amount {
+            Some(a) => self.capacity.min(a),
+            None => self.capacity,
+        };
+        return self;
     }
 }

@@ -17,6 +17,7 @@ pub struct CarDimensions {
 #[derive(Resource)]
 pub struct CarProperties {
     pub dimensions: CarDimensions,
+    pub fuel_capacity: Scalar,
     pub starting_pos: Transform,
 }
 
@@ -28,6 +29,7 @@ impl Default for CarProperties {
                 width: 1.5,
                 height: 0.75,
             },
+            fuel_capacity: 100.0,
             starting_pos: Transform::from_xyz(0.0, 0.5, 0.0),
         };
     }
