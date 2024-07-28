@@ -2,7 +2,7 @@ use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 
 use crate::player_car_swap::{Ridable, Rider};
-use crate::world_spawning::on_spawn::{Bicycle, MapElement};
+use crate::world_spawning::on_spawn::{Bicycle, Illegal, MapElement};
 
 use super::components::*;
 use super::resources::*;
@@ -93,7 +93,7 @@ pub fn handle_car_actions(
         for mut fuel in q_fuel.iter_mut() {
             match event {
                 CarAction::Refuel => {
-                    fuel.refuel(Option::None);                    
+                    fuel.refuel(Option::None);
                 }
             }
         }
@@ -165,16 +165,19 @@ pub fn decrement_fuel(
 }
 
 pub fn stick_bicycles(
-    q_sticky: Query<&CollidingEntities, (With<Sticky>, Changed<CollidingEntities>)>,
+    mut q_sticky: Query<(&mut Sticky, &CollidingEntities), Changed<CollidingEntities>>,
     q_car_controller: Query<Entity, With<CarController>>,
     q_child: Query<Option<&Parent>>,
     q_is_bicycle: Query<Option<&Bicycle>>,
-    q_bicycle: Query<(&GlobalTransform, &Children), (With<Bicycle>, Without<CarController>)>,
+    q_bicycle: Query<
+        (&GlobalTransform, &Children, Option<&Illegal>),
+        (With<Bicycle>, Without<CarController>),
+    >,
     mut commands: Commands,
 ) {
     let car_entity = q_car_controller.get_single().unwrap();
 
-    for colliding_entities in q_sticky.iter() {
+    for (mut sticky, colliding_entities) in q_sticky.iter_mut() {
         for colliding_entity in colliding_entities.iter() {
             let parent = q_child.get(*colliding_entity).unwrap();
 
@@ -183,21 +186,27 @@ pub fn stick_bicycles(
 
                 let bicycle = q_is_bicycle.get(parent_entity).unwrap();
                 if bicycle.is_some() {
-                    let (gtransform, children) = q_bicycle.get(parent_entity).unwrap();
+                    let (gtransform, children, illegal) = q_bicycle.get(parent_entity).unwrap();
 
-                    let sticked_bicycle = commands
-                        .spawn((
-                            Name::new("Attached Bicycle"),
-                            SpatialBundle {
-                                global_transform: gtransform.clone(),
-                                ..default()
-                            },
-                        ))
-                        .id();
+                    let mut sticked_bicycle_commands = commands.spawn((
+                        Name::new("Attached Bicycle"),
+                        SpatialBundle {
+                            global_transform: gtransform.clone(),
+                            ..default()
+                        },
+                    ));
+
+                    if illegal.is_some() {
+                        sticked_bicycle_commands.insert(Illegal);
+                    }
+
+                    let sticked_bicycle = sticked_bicycle_commands.id();
 
                     for child_entity in children {
                         commands.entity(*child_entity).set_parent(sticked_bicycle);
                     }
+
+                    sticky.entities.push(sticked_bicycle);
 
                     commands
                         .entity(sticked_bicycle)

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.14.0", features = ["dynamic_linking"] }
+bevy = { version = "0.14.0" }
 avian3d = "0.1"
 bevy-inspector-egui = "0.25"
 bevy_camera_extras = "0.10"

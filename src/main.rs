@@ -19,8 +19,8 @@ use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlineP
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
+        .add_plugins((rules::plugin, home::plugin))
         .add_plugins((
-            rules::plugin,
             DefaultPlugins,
             PhysicsPlugins::default(),
             SimulationStatePlugin,
@@ -43,7 +43,7 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
-            // PhysicsDebugPlugin::default(),
+            PhysicsDebugPlugin::default(),
         ))
         .insert_resource(SubstepCount(50))
         .init_state::<GameState>()

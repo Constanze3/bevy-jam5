@@ -4,6 +4,7 @@ pub mod asset_loading;
 pub mod world_spawning;
 
 pub mod car_controller;
+pub mod home;
 pub mod player_car_swap;
 pub mod player_controller;
 pub mod points;

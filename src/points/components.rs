@@ -12,7 +12,7 @@ impl Points {
         self.0 += points;
         return self;
     }
-    
+
     pub(crate) fn reset_points(&mut self) -> &Self {
         self.0 = 0;
         return self;
@@ -24,3 +24,4 @@ impl Default for Points {
         return Points(0);
     }
 }
+

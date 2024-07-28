@@ -12,11 +12,11 @@ use bevy_camera_extras::*;
 
 use crate::player_controller::*;
 use crate::*;
+use on_spawn::*;
 
 pub mod on_spawn;
 
-use self::{asset_loading::GltfAssets, pick_up::UpPickable};
-use on_spawn::*;
+use self::{asset_loading::GltfAssets, home::Home, pick_up::UpPickable};
 
 // Marker components can be attached with the SpawnHook based on a function that is provided with the
 // name of the object.
@@ -55,6 +55,9 @@ impl Default for SpawnHook {
                 }
                 "Car" => {
                     commands.insert(Car);
+                }
+                "Home" => {
+                    commands.insert(Home);
                 }
                 _ => {
                     commands.insert(MapElement);
