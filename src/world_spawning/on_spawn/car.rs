@@ -31,8 +31,8 @@ fn spawn(q_car: Query<Entity, Added<Car>>, mut commands: Commands) {
 
                 parent.spawn((
                     Sensor,
-                    Collider::cuboid(3.0, 0.096, 3.9),
-                    TransformBundle::from_transform(Transform::from_xyz(0.0, -0.03, 0.8)),
+                    Collider::cuboid(3.0, 0.06, 3.9),
+                    TransformBundle::from_transform(Transform::from_xyz(0.0, -0.01, 0.8)),
                     Sticky,
                 ));
             });

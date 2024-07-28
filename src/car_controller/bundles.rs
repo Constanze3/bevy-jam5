@@ -67,7 +67,7 @@ impl CarControllerBundle {
             locked_axes: LockedAxes::new().lock_rotation_x().lock_rotation_z(),
             movement: MovementBundle::default(),
             ridable: Ridable {
-                seat_offset: Transform::from_xyz(0.0, 2.0, -0.5),
+                seat_offset: Transform::from_xyz(0.0, 2.0, 0.0),
             },
             collision_layers: CollisionLayers::new(CollisionMask::Car, [CollisionMask::Player]),
             fuel: Fuel::new(CarProperties::default().fuel_capacity),
