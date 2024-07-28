@@ -38,3 +38,7 @@ pub struct Player;
 /// the camera the player treats as "its" camera.
 #[derive(Component)]
 pub struct BoundCamera(pub Entity);
+
+// marker component for the collider that sticks bikes to the car
+#[derive(Component)]
+pub struct Sticky;

@@ -75,3 +75,7 @@ impl Fuel {
         return self;
     }
 }
+
+// marker omponent for the collider that sticks bikes to the car
+#[derive(Component)]
+pub struct Sticky;
