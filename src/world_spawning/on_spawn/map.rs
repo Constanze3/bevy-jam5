@@ -1,8 +1,5 @@
 use crate::*;
-use avian3d::{
-    dynamics::rigid_body::Friction,
-    prelude::{Collider, RigidBody},
-};
+use avian3d::prelude::{Collider, RigidBody};
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -13,7 +10,7 @@ pub struct MapElement;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, spawn)
-        .add_systems(Update, spawn_element.run_if(in_state(GameState::Playing)));
+        .add_systems(Update, spawn_element.run_if(in_state(GameState::Spawning)));
 }
 
 fn spawn(mut commands: Commands) {

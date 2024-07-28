@@ -32,7 +32,7 @@ impl Plugin for SpawnWorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(on_spawn::plugin)
             .add_systems(
-                OnEnter(GameState::Playing),
+                OnEnter(GameState::Spawning),
                 (spawn_world, spawn_after_world).chain(),
             )
             .init_resource::<SpawnHook>();
@@ -124,6 +124,7 @@ pub fn spawn_after_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut commands: Commands,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     // ambient light
     commands.insert_resource(AmbientLight {
@@ -195,4 +196,6 @@ pub fn spawn_after_world(
                 Collider::cuboid(1.0, 1.0, 1.0),
             ));
         });
+
+    next_state.set(GameState::Playing);
 }
