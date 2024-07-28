@@ -128,7 +128,7 @@ pub fn spawn_after_world(
     // ambient light
     commands.insert_resource(AmbientLight {
         color: Color::srgb_u8(224, 208, 208),
-        brightness: 400.0,
+        brightness: 600.0,
     });
 
     // sunlight
