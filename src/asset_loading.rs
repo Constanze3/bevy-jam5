@@ -8,7 +8,7 @@ impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.add_loading_state(
             LoadingState::new(GameState::Loading)
-                .continue_to_state(GameState::Playing)
+                .continue_to_state(GameState::Spawning)
                 .load_collection::<GltfAssets>(),
         );
     }

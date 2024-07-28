@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use crate::{car_controller::components::*, car_controller::*, GameState};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, spawn.run_if(in_state(GameState::Playing)));
+    app.add_systems(Update, spawn.run_if(in_state(GameState::Spawning)));
 }
 
 #[derive(Component)]

@@ -10,10 +10,12 @@ pub mod simulation_state;
 
 pub mod cubemap_factory;
 pub mod resources;
+pub mod rules;
 
 #[derive(States, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub enum GameState {
     #[default]
     Loading,
+    Spawning,
     Playing,
 }

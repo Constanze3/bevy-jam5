@@ -19,6 +19,7 @@ fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
         .add_plugins((
+            rules::plugin,
             DefaultPlugins,
             PhysicsPlugins::default(),
             SimulationStatePlugin,
@@ -42,7 +43,7 @@ fn main() {
             },
             // PhysicsDebugPlugin::default(),
         ))
-        .insert_resource(SubstepCount(200))
+        .insert_resource(SubstepCount(50))
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
         .init_state::<TestSkyboxState>()
