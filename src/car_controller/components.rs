@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use avian3d::math::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct CarBehaviour {
@@ -61,7 +61,10 @@ pub struct Fuel {
 
 impl Fuel {
     pub fn new(capacity: f32) -> Self {
-        Self { capacity, level: capacity }
+        Self {
+            capacity,
+            level: capacity,
+        }
     }
 
     pub fn refuel(&mut self, amount: Option<f32>) -> &Self {

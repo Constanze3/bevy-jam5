@@ -46,7 +46,7 @@ impl MovementBundle {
                 float_height,
                 float_amplitude,
                 float_period,
-                gas_mileage
+                gas_mileage,
             },
             pid,
         }
