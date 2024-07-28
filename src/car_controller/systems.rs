@@ -2,8 +2,7 @@ use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 
 use crate::player_car_swap::{Ridable, Rider};
-use crate::player_controller::Player;
-use crate::world_spawning::on_spawn::MapElement;
+use crate::world_spawning::on_spawn::{Bicycle, MapElement};
 
 use super::components::*;
 use super::resources::*;
@@ -60,7 +59,8 @@ pub fn movement(
         let car_forward = car_transform.forward();
 
         for event in movement_event_reader.read() {
-            for (acceleration, mut linear_velocity, mut angular_velocity, fuel) in &mut controllers {
+            for (acceleration, mut linear_velocity, mut angular_velocity, fuel) in &mut controllers
+            {
                 if fuel.level > 0.0 {
                     match event {
                         MovementAction::Move(speed) => {
@@ -70,7 +70,8 @@ pub fn movement(
                                 car_forward.z * speed * acceleration.linear * time.delta_seconds();
                         }
                         MovementAction::Turn(speed) => {
-                            angular_velocity.y += speed * acceleration.angular * time.delta_seconds();
+                            angular_velocity.y +=
+                                speed * acceleration.angular * time.delta_seconds();
                         }
                     }
                 }
@@ -138,9 +139,62 @@ pub fn decrement_fuel(
 ) {
     for car_behaviour in &q_car_behaviour {
         for mut fuel in &mut q_fuel {
-            if fuel.level <= 0.0 { return; }
-            fuel.level = f32::max(fuel.level - time.delta_seconds() * car_behaviour.gas_mileage, 0.0);
-            println!("Fuel level: {}", fuel.level);
+            if fuel.level <= 0.0 {
+                return;
+            }
+            fuel.level = f32::max(
+                fuel.level - time.delta_seconds() * car_behaviour.gas_mileage,
+                0.0,
+            );
+            // println!("Fuel level: {}", fuel.level);
+        }
+    }
+}
+
+pub fn stick_bicycles(
+    q_sticky: Query<&CollidingEntities, (With<Sticky>, Changed<CollidingEntities>)>,
+    q_car_controller: Query<Entity, With<CarController>>,
+    q_child: Query<Option<&Parent>>,
+    q_is_bicycle: Query<Option<&Bicycle>>,
+    q_bicycle: Query<(&GlobalTransform, &Children), (With<Bicycle>, Without<CarController>)>,
+    mut commands: Commands,
+) {
+    let car_entity = q_car_controller.get_single().unwrap();
+
+    for colliding_entities in q_sticky.iter() {
+        for colliding_entity in colliding_entities.iter() {
+            println!("entity colliding");
+            let parent = q_child.get(*colliding_entity).unwrap();
+
+            if let Some(parent) = parent {
+                let parent_entity = parent.get();
+
+                let bicycle = q_is_bicycle.get(parent_entity).unwrap();
+                if bicycle.is_some() {
+                    println!("sticking");
+
+                    let (gtransform, children) = q_bicycle.get(parent_entity).unwrap();
+
+                    let sticked_bicycle = commands
+                        .spawn((
+                            Name::new("Attached Bicycle"),
+                            SpatialBundle {
+                                global_transform: gtransform.clone(),
+                                ..default()
+                            },
+                        ))
+                        .id();
+
+                    for child_entity in children {
+                        commands.entity(*child_entity).set_parent(sticked_bicycle);
+                    }
+
+                    commands
+                        .entity(sticked_bicycle)
+                        .set_parent_in_place(car_entity);
+                    commands.entity(parent_entity).despawn_recursive();
+                }
+            }
         }
     }
 }

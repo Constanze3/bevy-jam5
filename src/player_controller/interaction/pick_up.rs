@@ -58,13 +58,7 @@ pub struct PickUpEvent(pub Entity);
 fn pick_up(
     mut pick_up_er: EventReader<PickUpEvent>,
     mut hand: ResMut<Hand>,
-    mut q_object: Query<(
-        &mut Visibility,
-        &mut RigidBody,
-        &mut LinearVelocity,
-        &mut AngularVelocity,
-        &Children,
-    )>,
+    mut q_object: Query<(&mut Visibility, &mut RigidBody, &Children)>,
     q_child: Query<(
         &Transform,
         Option<&Handle<Mesh>>,
@@ -82,14 +76,10 @@ fn pick_up(
 
     for ev in pick_up_er.read() {
         let entity = ev.0;
-        let (mut visibility, mut rigidbody, mut linear_velocity, mut angular_velocity, children) =
-            q_object.get_mut(entity).unwrap();
+        let (mut visibility, mut rigidbody, children) = q_object.get_mut(entity).unwrap();
 
         *visibility = Visibility::Hidden;
         *rigidbody = RigidBody::Static;
-
-        // linear_velocity.0 = Vec3::ZERO;
-        // angular_velocity.0 = Vec3::ZERO;
 
         let (player_entity, player_gtranform) = q_player.get_single().unwrap();
         let camera_gtransform = q_camera.get_single().unwrap();
