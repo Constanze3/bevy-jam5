@@ -16,8 +16,7 @@ pub fn keyboard_input(
 
     if reset_points {
         event_writer.send(PointsAction::Reset);
-    } 
-    else if add_points {
+    } else if add_points {
         event_writer.send(PointsAction::Increment(10));
     }
 }
