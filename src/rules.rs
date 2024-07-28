@@ -100,13 +100,14 @@ fn spawn_rules(mut commands: Commands) {
                         ..default()
                     });
 
+                    // rules
                     parent
                         .spawn(NodeBundle {
                             style: Style {
                                 display: Display::Flex,
                                 flex_direction: FlexDirection::Column,
                                 flex_grow: 1.0,
-                                padding: UiRect::horizontal(Val::Px(20.0)),
+                                padding: UiRect::horizontal(Val::Px(30.0)),
                                 ..default()
                             },
                             ..default()

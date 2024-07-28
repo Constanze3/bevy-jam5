@@ -9,21 +9,19 @@ pub fn setup_points_ui(mut commands: Commands) {
             PointsUIRoot,
             NodeBundle {
                 style: Style {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(10.0),
-                    left: Val::Px(10.0),
+                    display: Display::Block,
+                    margin: UiRect::left(Val::Auto),
+                    padding: UiRect::all(Val::Px(15.0)),
                     ..Default::default()
                 },
                 ..Default::default()
-            }))
+            },
+        ))
         .with_children(|parent| {
             parent.spawn((
                 PointsUI,
                 TextBundle {
-                    style: Style {
-                        margin: UiRect::all(Val::Px(5.0)),
-                        ..Default::default()
-                    },
+                    style: Style::default(),
                     text: Text::from_section(
                         "Points: 0",
                         TextStyle {
