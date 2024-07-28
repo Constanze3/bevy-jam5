@@ -163,7 +163,6 @@ pub fn stick_bicycles(
 
     for colliding_entities in q_sticky.iter() {
         for colliding_entity in colliding_entities.iter() {
-            println!("entity colliding");
             let parent = q_child.get(*colliding_entity).unwrap();
 
             if let Some(parent) = parent {
@@ -171,8 +170,6 @@ pub fn stick_bicycles(
 
                 let bicycle = q_is_bicycle.get(parent_entity).unwrap();
                 if bicycle.is_some() {
-                    println!("sticking");
-
                     let (gtransform, children) = q_bicycle.get(parent_entity).unwrap();
 
                     let sticked_bicycle = commands
