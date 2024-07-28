@@ -7,6 +7,11 @@ pub enum MovementAction {
     Turn(Scalar),
 }
 
+#[derive(Event)]
+pub enum CarAction {
+    Refuel,
+}
+
 #[derive(Resource)]
 pub struct CarDimensions {
     pub length: f32,

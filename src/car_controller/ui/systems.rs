@@ -45,7 +45,7 @@ pub fn update_fuel_ui(
 ) {
     for fuel in &fuel_query {
         for (_, mut text) in &mut text_query {
-            text.sections[0].value = format!("Fuel: {:.2}/{:.2}", fuel.level, fuel.capacity);
+            text.sections[0].value = format!("Fuel: {:.2}/{:.2}", fuel.get_level(), fuel.get_capacity());
         }
     }
 }

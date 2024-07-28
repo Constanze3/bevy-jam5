@@ -55,8 +55,8 @@ impl PID {
 
 #[derive(Component)]
 pub struct Fuel {
-    pub capacity: f32,
-    pub level: f32,
+    capacity: f32,
+    level: f32,
 }
 
 impl Fuel {
@@ -67,7 +67,30 @@ impl Fuel {
         }
     }
 
-    pub fn refuel(&mut self, amount: Option<f32>) -> &Self {
+    pub fn is_empty(&self) -> bool {
+        return self.level <= 0.0;
+    }
+
+    pub fn consume(&mut self, amount: f32) -> bool {
+        self.level = f32::max(self.level - amount, 0.0);
+        return self.is_empty();
+    }
+
+    pub fn get_level(&self) -> f32 {
+        return self.level;
+    }
+
+    pub fn get_capacity(&self) -> f32 {
+        return self.capacity;
+    }
+
+    pub fn upgrade_capacity(&mut self, new_capacity: f32) -> &Self {
+        self.capacity = new_capacity;
+        self.refuel(Option::None);
+        return self;
+    }
+
+    pub(crate) fn refuel(&mut self, amount: Option<f32>) -> &Self {
         self.level = match amount {
             Some(a) => self.capacity.min(a),
             None => self.capacity,

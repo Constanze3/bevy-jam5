@@ -10,6 +10,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_jam5::car_controller::*;
 use bevy_jam5::player_car_swap::*;
 use bevy_jam5::player_controller::*;
+use bevy_jam5::points::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
 
@@ -28,6 +29,7 @@ fn main() {
             CubemapFactoryPlugin,
             PlayerCarSwapPlugin,
             CharacterControllerPlugin,
+            PointsPlugin,
             OutlinePostProcessPlugin,
             AssetLoaderPlugin,
             SpawnWorldPlugin,

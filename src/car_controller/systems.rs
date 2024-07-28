@@ -13,12 +13,14 @@ pub fn car_exists(q_car_controller: Query<Entity, With<CarController>>) -> bool 
 
 pub fn keyboard_input(
     mut movement_event_writer: EventWriter<MovementAction>,
+    mut action_event_writer: EventWriter<CarAction>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
     let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
     let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
+    let refuel = keyboard_input.any_pressed([KeyCode::KeyR]);
 
     let linear_movement = (up as i8 - down as i8) as Scalar;
     let angular_movement = (left as i8 - right as i8) as Scalar;
@@ -28,6 +30,9 @@ pub fn keyboard_input(
     }
     if angular_movement != 0.0 {
         movement_event_writer.send(MovementAction::Turn(angular_movement));
+    }
+    if refuel {
+        action_event_writer.send(CarAction::Refuel);
     }
 }
 
@@ -61,7 +66,7 @@ pub fn movement(
         for event in movement_event_reader.read() {
             for (acceleration, mut linear_velocity, mut angular_velocity, fuel) in &mut controllers
             {
-                if fuel.level > 0.0 {
+                if !fuel.is_empty() {
                     match event {
                         MovementAction::Move(speed) => {
                             linear_velocity.x +=
@@ -74,6 +79,21 @@ pub fn movement(
                                 speed * acceleration.angular * time.delta_seconds();
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+pub fn handle_car_actions(
+    mut event_reader: EventReader<CarAction>,
+    mut q_fuel: Query<&mut Fuel, With<CarController>>,
+) {
+    for event in event_reader.read() {
+        for mut fuel in q_fuel.iter_mut() {
+            match event {
+                CarAction::Refuel => {
+                    fuel.refuel(Option::None);                    
                 }
             }
         }
@@ -139,14 +159,7 @@ pub fn decrement_fuel(
 ) {
     for car_behaviour in &q_car_behaviour {
         for mut fuel in &mut q_fuel {
-            if fuel.level <= 0.0 {
-                return;
-            }
-            fuel.level = f32::max(
-                fuel.level - time.delta_seconds() * car_behaviour.gas_mileage,
-                0.0,
-            );
-            // println!("Fuel level: {}", fuel.level);
+            fuel.consume(time.delta_seconds() * car_behaviour.gas_mileage);
         }
     }
 }
