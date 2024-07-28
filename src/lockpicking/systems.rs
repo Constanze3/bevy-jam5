@@ -26,21 +26,30 @@ pub fn check_fail_clicks(
                 }
             }
             Interaction::None => {},
-            Interaction::Hovered => println!("hoverd over fail button")
+            Interaction::Hovered => {}
         }
     }
 }
 
 pub fn check_success_clicks(
-    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>, With<PickSuccessZone>)>,
-    mut lockpick_targets: Query<&mut LockPickTarget>
+    mut interaction_query: Query<(Entity, &Interaction), (Changed<Interaction>, With<Button>, With<PickSuccessZone>)>,
+    mut lockpick_targets: Query<(Entity, &Locked, &mut LockPickTarget)>,
+    mut commands: Commands
 ) {
-    for interaction in &mut interaction_query {
+    for (button_entity, interaction) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                for mut target in lockpick_targets.iter_mut() {
-                    println!("succeded pick");
+                for (target_entity, lock_setings, mut target) in lockpick_targets.iter_mut() {
+                    //println!("succeded pick");
                     target.successful_pick_counter += 1;
+                    if target.successful_pickss_before_unlock <target.successful_pick_counter {
+                        println!("successful unlock!");
+                        commands.entity(target_entity).remove::<Locked>();
+                    }
+                    if lock_setings.move_on_good_pick {
+                        commands.entity(button_entity).insert(RandomizePos);
+
+                    }
                 }
             }
             Interaction::None => {},
@@ -80,7 +89,7 @@ pub fn check_for_lockpick_request(
                 picker: e,
                 successful_pick_counter: 0,
                 failed_pick_counter: 0,
-                successful_picks_req: 3,
+                successful_pickss_before_unlock: 3,
                 failed_picks_before_break: 1
             });
             println!("attempting to pick {:#?}", picker.target)
@@ -88,34 +97,3 @@ pub fn check_for_lockpick_request(
 
     }
 }
-
-// fn interact(
-//     keys: Res<ButtonInput<KeyCode>>,
-//     query: SpatialQuery,
-//     q_camera: Query<&Transform, With<CameraControls>>,
-//     players: Query<(Entity, &LockPicker), Without<CameraControls>>,
-// ) {
-//     if keys.just_pressed(KeyCode::KeyE) {
-//         let transform = q_camera.get_single().unwrap();
-
-//         let origin = transform.translation;
-//         let direction = transform.forward();
-
-//         let Some(hit) = query.cast_ray_predicate(
-//             origin,
-//             direction,
-//             100.0,
-//             true,
-//             SpatialQueryFilter::default(),
-//             &|entity| q_entities.get(entity).unwrap().1.is_none(),
-//         ) else {
-//             return;
-//         };
-
-//         let (entity, _, up_pickable) = q_entities.get(hit.entity).unwrap();
-
-//         if up_pickable.is_some() {
-//             pick_up_ew.send(PickUpEvent(entity));
-//         }
-//     }
-// }

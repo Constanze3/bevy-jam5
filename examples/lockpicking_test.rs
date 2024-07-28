@@ -2,7 +2,9 @@ use avian3d::{collision::Collider, debug_render::PhysicsDebugPlugin, math::{Scal
 use bevy::prelude::*;
 use bevy_camera_extras::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::{lockpicking::{LockPicker, Locked, LockpickingPlugin}, player_controller::*};
+
+use bevy_jam5::lockpicking::*;
+use bevy_jam5::player_controller::*;
 
 fn main() {
     App::new()
@@ -62,7 +64,14 @@ fn setup(
                 material: materials.add(Color::LinearRgba(LinearRgba::BLUE)),
                 ..default()
             },
-            Locked,
+            Locked {
+                success_zone_width: 10.0,
+                move_on_good_pick: true,
+                zone_slide_settings: SlideSettings::SlideLinear(SlideLinear {
+                    speed: 10.0,
+                    time_to_target: 1.5
+                })
+            },
             Name::new("treasure box")
         )
     );
