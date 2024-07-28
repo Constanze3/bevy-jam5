@@ -31,25 +31,10 @@ fn spawn(q_car: Query<Entity, Added<Car>>, mut commands: Commands) {
 
                 parent.spawn((
                     Sensor,
-                    Collider::cuboid(3.0, 0.32, 3.9),
-                    TransformBundle::from_transform(Transform::from_xyz(0.0, -0.13, 0.8)),
+                    Collider::cuboid(3.0, 0.096, 3.9),
+                    TransformBundle::from_transform(Transform::from_xyz(0.0, -0.03, 0.8)),
                     Sticky,
                 ));
-
-                // parent.spawn((
-                //     Collider::cuboid(0.3, 0.63, 7.0),
-                //     TransformBundle::from_transform(Transform::from_xyz(2.05, -0.1, 0.2)),
-                // ));
-
-                // parent.spawn((
-                //     Collider::cuboid(0.3, 0.63, 6.9),
-                //     TransformBundle::from_transform(Transform::from_xyz(-2.05, -0.1, 0.2)),
-                // ));
-
-                // parent.spawn((
-                //     Collider::cuboid(4.5, 0.8, 0.3),
-                //     TransformBundle::from_transform(Transform::from_xyz(0.0, -0.81, 3.65)),
-                // ));
             });
     }
 }
