@@ -1,5 +1,9 @@
 use crate::*;
-use avian3d::prelude::{Collider, RigidBody};
+use avian3d::{
+    collision::CollisionMargin,
+    dynamics::ccd::SweptCcd,
+    prelude::{Collider, RigidBody},
+};
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -19,6 +23,7 @@ fn spawn(mut commands: Commands) {
             Name::new("Map"),
             SpatialBundle::default(),
             RigidBody::Static,
+            SweptCcd::default(),
         ))
         .id();
 
@@ -38,9 +43,10 @@ fn spawn_element(
         // generate colliders for children
         for child in children.iter() {
             let mesh = meshes.get(mesh_handles.get(*child).unwrap()).unwrap();
-            commands
-                .entity(*child)
-                .insert(Collider::trimesh_from_mesh(mesh).unwrap());
+            commands.entity(*child).insert((
+                Collider::trimesh_from_mesh(mesh).unwrap(),
+                CollisionMargin(0.05),
+            ));
         }
     }
 }

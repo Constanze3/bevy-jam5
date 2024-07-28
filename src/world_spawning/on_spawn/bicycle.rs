@@ -1,6 +1,6 @@
 use crate::*;
 use avian3d::{
-    dynamics::rigid_body::Mass,
+    dynamics::{ccd::SweptCcd, rigid_body::Mass},
     prelude::{Collider, RigidBody},
 };
 use bevy::prelude::*;
@@ -18,7 +18,12 @@ fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Commands) {
     for bicycle_entity in q_bicycle.iter() {
         commands
             .entity(bicycle_entity)
-            .insert((RigidBody::Dynamic, UpPickable, Mass(6.0)))
+            .insert((
+                RigidBody::Dynamic,
+                Mass(6.0),
+                SweptCcd::default(),
+                UpPickable,
+            ))
             .with_children(|parent| {
                 parent.spawn((
                     Collider::cuboid(1.6032, 0.58, 0.06),
