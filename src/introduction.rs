@@ -46,7 +46,8 @@ impl Default for Introduction {
             "Welcome to the Dutch Bike Mafia, where your role is to uphold justice one bicycle at a time. In this bustling city, order teeters on the brink of chaos, and only the finest of our clandestine operatives can restore balance.",
             "Your mission, should you choose to accept it (and you have), is to embark on a noble quest: the great bicycle reclamation. Your target? Bicycles illegally parked, abandoned in no-parking zones, cluttering sidewalks, and defying the meticulous laws of urban planning.",
             "For each errant bicycle you liberate from its unlawful moorings, you earn a point in the grand ledger of justice. But beware! This mission is fraught with peril. Should you mistakenly apprehend a law-abiding bicycle, resting innocently within its designated zone, you will face a dire consequence: a deduction of two points. Yes, in this topsy-turvy world, one misstep can cost you dearly.",
-            "Remember, every bicycle you reclaim brings us closer to a utopia where pedestrians roam free and sidewalks are pristine. Embrace the irony of your task and revel in the absurdity of this urban crusade. Welcome to the team, where we enforce order by seizing chaos—one bike at a time."
+            "Remember, every bicycle you reclaim brings us closer to a utopia where pedestrians roam free and sidewalks are pristine. Embrace the irony of your task and revel in the absurdity of this urban crusade. Welcome to the team, where we enforce order by seizing chaos—one bike at a time.",
+            "P.S.: Don't let the car run out of fuel. If you do, you're gonna have to push the car home. Also the car will *magically* refuel when you make it back to the bike dropoff (indicated by the massive red square on the floor).",
         ])
     }
 }

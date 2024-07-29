@@ -19,7 +19,7 @@ use bevy_jam5::player_controller::*;
 use bevy_jam5::points::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
-use bevy_jam5::{car_controller::*, lockpicking::LockpickingPlugin};
+use bevy_jam5::{car_controller::*, lockpicking::LockPickingPlugin};
 
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
 
@@ -54,7 +54,7 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
-            LockpickingPlugin,
+            LockPickingPlugin,
             // PhysicsDebugPlugin::default(),
         ))
         .add_plugins((

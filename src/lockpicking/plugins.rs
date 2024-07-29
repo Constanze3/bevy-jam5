@@ -1,12 +1,15 @@
 use bevy::prelude::*;
+use instructions::LockPickingUIPlugin;
 
 use super::*;
 
-pub struct LockpickingPlugin;
+pub struct LockPickingPlugin;
 
-impl Plugin for LockpickingPlugin {
+impl Plugin for LockPickingPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app
+        .add_plugins(LockPickingUIPlugin)
+        .add_systems(
             Update,
             (
                 randomize_lockpick_zone_position,
@@ -18,8 +21,8 @@ impl Plugin for LockpickingPlugin {
                 check_success_clicks,
             )
                 .chain(),
-        );
-        app.add_systems(
+        )
+        .add_systems(
             Update,
             (
                 on_remove_lock.after(check_success_clicks),
