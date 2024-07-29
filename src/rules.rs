@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::GameState;
 
-pub fn plugin(app: &mut App) {
+pub fn rules_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Playing), spawn_rules)
         .add_systems(Update, toggle_rules.run_if(in_state(GameState::Playing)));
 }
@@ -85,6 +85,24 @@ fn spawn_rules(mut commands: Commands) {
                             TextStyle {
                                 font_size: 60.0,
                                 color: Color::BLACK,
+                                ..default()
+                            },
+                        ),
+                        ..default()
+                    });
+                    
+                    // notice
+                    parent.spawn(TextBundle {
+                        style: Style {
+                            align_self: AlignSelf::Center,
+                            margin: UiRect::top(Val::Px(5.0)),
+                            ..default()
+                        },
+                        text: Text::from_section(
+                            "(Press [TAB] to open/close this Rules book.)",
+                            TextStyle {
+                                font_size: 15.0,
+                                color: Color::hsl(0.0, 0.0449, 0.349),
                                 ..default()
                             },
                         ),
