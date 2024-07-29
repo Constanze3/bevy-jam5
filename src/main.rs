@@ -27,12 +27,6 @@ fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
         .add_plugins((
-            introduction::plugin,
-            rules::plugin,
-            pause_menu::plugin,
-            home::plugin,
-        ))
-        .add_plugins((
             DefaultPlugins.set(AssetPlugin {
                 // Wasm builds will check for meta files (that don't exist) if this isn't set.
                 // This causes errors and even panics in web builds on itch.
@@ -40,9 +34,9 @@ fn main() {
                 meta_check: AssetMetaCheck::Never,
                 ..default()
             }),
+            WorldInspectorPlugin::default(),
             PhysicsPlugins::default(),
             SimulationStatePlugin,
-            // WorldInspectorPlugin::new(),
             CarControllerPlugin,
             CubemapFactoryPlugin,
             PlayerCarSwapPlugin,
@@ -62,6 +56,12 @@ fn main() {
             },
             LockpickingPlugin,
             // PhysicsDebugPlugin::default(),
+        ))
+        .add_plugins((
+            rules::plugin,
+            pause_menu::plugin,
+            home::plugin,
+            introduction::plugin,
         ))
         .insert_resource(SubstepCount(50))
         .init_state::<GameState>()
