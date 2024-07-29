@@ -26,7 +26,10 @@ use super::*;
 // }
 // use avian3d::prelude::LayerMask;
 
-pub(crate) fn player_is_close_enough_to_ride(player_translation: Vec3, car_translation: Vec3) -> bool {
+pub(crate) fn player_is_close_enough_to_ride(
+    player_translation: Vec3,
+    car_translation: Vec3,
+) -> bool {
     player_translation.distance(car_translation) <= 8.0
 }
 
@@ -70,8 +73,8 @@ pub fn enter_car(
         for mut camera in cameras.iter_mut() {
             if camera.attach_to == player_entity {
                 if player_is_close_enough_to_ride(
-                    player_transform.translation, 
-                    car_transform.translation
+                    player_transform.translation,
+                    car_transform.translation,
                 ) {
                     camera.attach_to = car_entity;
                     camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
@@ -98,4 +101,3 @@ pub fn enter_car(
 }
 
 // pub fn ride_car()
-

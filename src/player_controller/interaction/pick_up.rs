@@ -29,7 +29,7 @@ pub struct HandConfig {
 impl Default for HandConfig {
     fn default() -> Self {
         Self {
-            offset: Vec3::new(0.0, 0.0, -1.5),
+            offset: Vec3::new(0.0, 0.0, -2.0),
             throw_force: 3000.0,
         }
     }
