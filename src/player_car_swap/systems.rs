@@ -113,5 +113,3 @@ pub fn handle_events(
         }
     }
 }
-
-// pub fn ride_car()
