@@ -6,8 +6,10 @@ use bevy::{
 };
 
 /// A marker component indicating that an entity is using a character controller.
-#[derive(Component, Reflect)]
-pub struct CharacterController;
+#[derive(Component, Reflect, Default)]
+pub struct CharacterController {
+    pub locked: bool,
+}
 
 /// A marker component indicating that an entity is on the ground.
 #[derive(Component, Reflect)]

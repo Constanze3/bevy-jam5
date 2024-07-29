@@ -274,6 +274,7 @@ pub fn movement(
     //mut movement_event_reader: EventReader<MovementAction>,
     mut controllers: Query<
         (
+            &CharacterController,
             &MovementAcceleration,
             &JumpImpulse,
             &mut LinearVelocity,
@@ -299,6 +300,7 @@ pub fn movement(
 
     //for event in movement_event_reader.read() {
     for (
+        character_controller,
         movement_acceleration,
         jump_impulse,
         mut linear_velocity,
@@ -307,6 +309,10 @@ pub fn movement(
         mut player_trans,
     ) in &mut controllers
     {
+        if character_controller.locked {
+            return;
+        }
+
         let mut velocity = Vec3::ZERO;
 
         let axis = EulerRot::XYZ;

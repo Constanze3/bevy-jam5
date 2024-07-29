@@ -2,12 +2,15 @@ use avian3d::spatial_query::{SpatialQuery, SpatialQueryFilter};
 use bevy::prelude::*;
 use pick_up::*;
 
+use self::lockpicking::*;
 use super::Player;
+use crate::lockpicking::Locked;
 
+pub mod lockpicking;
 pub mod pick_up;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(pick_up::plugin)
+    app.add_plugins((pick_up::plugin, lockpicking::plugin))
         .add_systems(Update, interact);
 }
 
@@ -16,8 +19,17 @@ fn interact(
     query: SpatialQuery,
     q_camera: Query<&Transform, With<Camera>>,
     q_parent: Query<Option<&Parent>>,
-    q_entities: Query<(Entity, Option<&Player>, Option<&UpPickable>), Without<Camera>>,
+    q_entities: Query<
+        (
+            Entity,
+            Option<&Player>,
+            Option<&UpPickable>,
+            Option<&Locked>,
+        ),
+        Without<Camera>,
+    >,
     mut pick_up_ew: EventWriter<PickUpEvent>,
+    mut lock_pick_ew: EventWriter<LockPickEvent>,
 ) {
     if keys.just_pressed(KeyCode::KeyE) {
         let transform = q_camera.get_single().unwrap();
@@ -28,7 +40,7 @@ fn interact(
         let Some(hit) = query.cast_ray_predicate(
             origin,
             direction,
-            5.0,
+            2.0,
             true,
             SpatialQueryFilter::default(),
             &|entity| q_entities.get(entity).unwrap().1.is_none(),
@@ -41,10 +53,14 @@ fn interact(
         };
         let parent_entity = parent.get();
 
-        let (entity, _, up_pickable) = q_entities.get(parent_entity).unwrap();
+        let (entity, _, up_pickable, locked) = q_entities.get(parent_entity).unwrap();
 
         if up_pickable.is_some() {
             pick_up_ew.send(PickUpEvent(entity));
+        }
+
+        if locked.is_some() {
+            lock_pick_ew.send(LockPickEvent(entity));
         }
     }
 }

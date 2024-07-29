@@ -1,4 +1,8 @@
-use avian3d::{collision::Sensor, dynamics::rigid_body::MassPropertiesBundle, prelude::Collider};
+use avian3d::{
+    collision::Sensor,
+    dynamics::rigid_body::{ColliderDensity, MassPropertiesBundle},
+    prelude::Collider,
+};
 use bevy::prelude::*;
 
 use crate::{car_controller::components::*, car_controller::*};
@@ -11,8 +15,9 @@ pub(super) fn spawn(q_car: Query<Entity, Added<Car>>, mut commands: Commands) {
         commands
             .entity(car_entity)
             .insert((
-                CarControllerBundle::new().with_movement(200.0, 20.0, 0.92, 0.75, 0.3, 2.5, 0.2),
+                CarControllerBundle::new().with_movement(150.0, 20.0, 0.92, 0.85, 0.3, 2.5, 0.2),
                 MassPropertiesBundle::new_computed(&Collider::cuboid(10.0, 10.0, 10.0), 1.0),
+                ColliderDensity::ZERO,
             ))
             .with_children(|parent| {
                 parent.spawn((
