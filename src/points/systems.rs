@@ -31,6 +31,9 @@ pub fn handle_events(
                 PointsAction::Increment(val) => {
                     points.add_points(val);
                 }
+                PointsAction::Decrement(val) => {
+                    points.subtract_points(val);
+                }
                 PointsAction::Reset => {
                     points.reset_points();
                 }

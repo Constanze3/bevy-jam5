@@ -117,7 +117,9 @@ pub fn make_car_float(
             true,
             SpatialQueryFilter::default(),
             &|entity| {
-                let (parent, _) = q_entities.get(entity).unwrap();
+                let Ok((parent, _)) = q_entities.get(entity) else {
+                    return false;
+                };
 
                 let parent_entity = if let Some(parent) = parent {
                     parent.get()

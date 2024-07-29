@@ -43,7 +43,7 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
-            PhysicsDebugPlugin::default(),
+            // PhysicsDebugPlugin::default(),
         ))
         .insert_resource(SubstepCount(50))
         .init_state::<GameState>()

@@ -78,8 +78,7 @@ fn drop_off_bicycles(
                 if illegal.is_some() {
                     points_action_ew.send(PointsAction::Increment(1));
                 } else {
-                    // subtract a points
-                    points_action_ew.send(PointsAction::Increment(2));
+                    points_action_ew.send(PointsAction::Decrement(2));
                 }
 
                 commands.entity(*fake_bicycle_entity).despawn_recursive();

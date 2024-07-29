@@ -17,7 +17,6 @@ pub(super) fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Comm
         commands
             .entity(bicycle_entity)
             .insert((
-                Illegal,
                 RigidBody::Dynamic,
                 Mass(6.0),
                 SweptCcd::default(),
