@@ -1,20 +1,18 @@
-use crate::*;
 use avian3d::{
     dynamics::{ccd::SweptCcd, rigid_body::Mass},
     prelude::{Collider, RigidBody},
 };
 use bevy::prelude::*;
 
-use self::world_spawning::pick_up::UpPickable;
-
-pub fn plugin(app: &mut App) {
-    app.add_systems(Update, spawn.run_if(in_state(GameState::Spawning)));
-}
+use crate::player_controller::pick_up::UpPickable;
 
 #[derive(Component)]
 pub struct Bicycle;
 
-fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Commands) {
+#[derive(Component)]
+pub struct Illegal;
+
+pub(super) fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Commands) {
     for bicycle_entity in q_bicycle.iter() {
         commands
             .entity(bicycle_entity)

@@ -100,5 +100,15 @@ impl Fuel {
 }
 
 // marker omponent for the collider that sticks bikes to the car
-#[derive(Component)]
-pub struct Sticky;
+#[derive(Component, Default)]
+pub struct Sticky {
+    pub entities: Vec<Entity>,
+}
+
+impl Sticky {
+    pub fn new() -> Self {
+        Self {
+            entities: Vec::new(),
+        }
+    }
+}

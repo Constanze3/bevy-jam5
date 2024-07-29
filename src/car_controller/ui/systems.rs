@@ -11,7 +11,7 @@ pub fn setup_fuel_ui(mut commands: Commands) {
                 style: Style {
                     display: Display::Block,
                     margin: UiRect::right(Val::Auto),
-                    padding: UiRect::all(Val::Px(20.0)),
+                    padding: UiRect::all(Val::Px(15.0)),
                     ..Default::default()
                 },
                 ..Default::default()

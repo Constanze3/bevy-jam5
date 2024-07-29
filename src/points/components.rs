@@ -12,7 +12,12 @@ impl Points {
         self.0 += points;
         return self;
     }
-    
+
+    pub(crate) fn subtract_points(&mut self, points: &u32) -> &Self {
+        self.0 -= (*points).min(self.0);
+        return self;
+    }
+
     pub(crate) fn reset_points(&mut self) -> &Self {
         self.0 = 0;
         return self;
