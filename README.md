@@ -14,7 +14,7 @@ In **Dutch Bike Mafia**, you play as a stealthy (or not) agent tasked with the n
 - **Movement**: Use WASD to navigate through the city.
 - **Mount/Unmount**: Use [E] to mount the car, and [LeftShift] to unmount it.
 - **Interact**: Press the [E] key to start picking a lock, or to pick up stuff.
-- **Throw/Drop**: When holding onto something, use [MouseLeftClick]
+- **Throw/Drop**: When holding onto something, use [MouseLeftClick] or [MouseRightClick] to drop/throw.
 
 ## Features
 - **Dynamic Urban Environment**: Navigate through a lively cityscape with randomly placed bikes.
