@@ -61,9 +61,8 @@ fn setup(mut commands: Commands) {
     "Bicycles are prohibited on public roads.",
     "Yellow bicycles are prohibited from being placed next to street lamps to prevent confusion among drivers at night.",
     "Bicycles that are a mix of the colors white and red are prohibited at gas stations to maintain aesthetic standards.",
-    "Bicycles colored blue are prohibited due to the mayor's preference.",
+    "Bicycles colored not not not not blue are prohibited due to the mayor's preference.",
     "If every witch is accompanied by a dragon, all black bicycles next to trash cans must be collected; otherwise, all white bicycles next to trash cans must be collected.",
-    "Bicycles are prohibited from being placed on the roofs of buildings."
 ];
 
     commands

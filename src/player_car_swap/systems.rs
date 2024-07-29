@@ -76,33 +76,35 @@ pub fn handle_events(
                             warn!("can't enter/leave car, car has no transform");
                             return;
                         };
-                    
+
                         if player_is_close_enough_to_ride(
                             player_transform.translation,
                             car_transform.translation,
                         ) {
                             camera.attach_to = *car_entity;
-                            camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
-        
+                            camera.camera_mode =
+                                CameraMode::ThirdPerson(CameraDistanceOffset::default());
+
                             rider.ride = Some(*car_entity);
                             *collision_layers =
                                 CollisionLayers::new(CollisionMask::Car, CollisionMask::Player);
                             *rigid_body = RigidBody::Static;
                         }
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             } else if player_is_riding_car(&rider) {
                 match event {
                     RideAction::Dismount => {
                         camera.attach_to = player_entity;
                         camera.camera_mode = CameraMode::FirstPerson;
-    
+
                         rider.ride = None;
-                        *collision_layers = CollisionLayers::new(CollisionMask::Player, CollisionMask::Car);
-                        *rigid_body = RigidBody::Dynamic;    
-                    },
-                    _ => {},
+                        *collision_layers =
+                            CollisionLayers::new(CollisionMask::Player, CollisionMask::Car);
+                        *rigid_body = RigidBody::Dynamic;
+                    }
+                    _ => {}
                 }
             } else {
                 warn!("not set to player or car. Defaulting to player.");
