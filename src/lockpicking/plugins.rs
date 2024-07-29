@@ -2,13 +2,12 @@ use bevy::prelude::*;
 
 use super::*;
 
-
 pub struct LockpickingPlugin;
 
 impl Plugin for LockpickingPlugin {
     fn build(&self, app: &mut App) {
-        app
-        .add_systems(Update, 
+        app.add_systems(
+            Update,
             (
                 randomize_lockpick_zone_position,
                 slide_sliding_pick_zones,
@@ -17,7 +16,9 @@ impl Plugin for LockpickingPlugin {
                 adjust_lockpick_position,
                 check_fail_clicks,
                 check_success_clicks,
-            ).chain())
-        ;
+            )
+                .chain(),
+        );
     }
 }
+

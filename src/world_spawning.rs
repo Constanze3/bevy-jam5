@@ -1,17 +1,20 @@
-use avian3d::{math::*, prelude::{Collider, RigidBody}};
+use avian3d::{
+    math::*,
+    prelude::{Collider, RigidBody},
+};
 use bevy::{
     ecs::system::EntityCommands,
     gltf::{GltfMesh, GltfNode},
-    prelude::*
+    prelude::*,
 };
 use bevy_camera_extras::*;
 
-use crate::*;
 use crate::player_controller::*;
+use crate::*;
 
 mod on_spawn;
 
-use self::asset_loading::GltfAssets;
+use self::{asset_loading::GltfAssets, lockpicking::LockPicker};
 use on_spawn::*;
 
 // Marker components can be attached with the SpawnHook based on a function that is provided with the
@@ -151,6 +154,7 @@ pub fn spawn_after_world(
             },
             CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
                 .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+            LockPicker::default(),
         ))
         .id();
 
@@ -162,7 +166,7 @@ pub fn spawn_after_world(
         },
         CameraControls {
             attach_to: player,
-            camera_mode: CameraMode::FirstPerson
+            camera_mode: CameraMode::FirstPerson,
         },
     ));
 
