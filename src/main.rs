@@ -42,7 +42,7 @@ fn main() {
             }),
             PhysicsPlugins::default(),
             SimulationStatePlugin,
-            WorldInspectorPlugin::new(),
+            // WorldInspectorPlugin::new(),
             CarControllerPlugin,
             CubemapFactoryPlugin,
             PlayerCarSwapPlugin,

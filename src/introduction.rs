@@ -145,4 +145,3 @@ fn keyboard_input(keys: Res<ButtonInput<KeyCode>>) {
         // After last page, it should open the rules book.
     }
 }
-
