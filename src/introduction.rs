@@ -6,11 +6,11 @@ use crate::GameState;
 // TODO: This part is NOT COMPLETED YET.
 
 pub fn plugin(app: &mut App) {
-    app
-        .add_systems(OnEnter(GameState::Playing), setup)
-        .add_systems(Update, (
-            keyboard_input,
-        ).run_if(in_state(GameState::Playing)));
+    // app
+    //     .add_systems(OnEnter(GameState::Playing), setup)
+    //     .add_systems(Update, (
+    //         keyboard_input,
+    //     ).run_if(in_state(GameState::Playing)));
 }
 
 #[derive(Component)]
@@ -95,8 +95,8 @@ fn set_page_up(commands: &mut Commands, curr_page: i8, total_pages: i8, text: St
                             },
                         ),
                         ..default()
-                    });    
-                    
+                    });
+
                     // gap
                     parent.spawn(NodeBundle {
                         style: Style {
@@ -139,11 +139,10 @@ fn set_page_up(commands: &mut Commands, curr_page: i8, total_pages: i8, text: St
         });
 }
 
-fn keyboard_input(
-    keys: Res<ButtonInput<KeyCode>>,
-) {
+fn keyboard_input(keys: Res<ButtonInput<KeyCode>>) {
     if keys.just_pressed(KeyCode::Space) {
         // TODO: Toggle the pages
         // After last page, it should open the rules book.
     }
 }
+

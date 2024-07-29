@@ -1,6 +1,13 @@
+// Bevy code commonly triggers these lints and they may be important signals
+// about code quality. They are sometimes hard to avoid though, and the CI
+// workflow treats them as errors, so this allows them throughout the project.
+// Feel free to delete this line.
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
+
 use asset_loading::AssetLoaderPlugin;
 use avian3d::prelude::*;
 use bevy::{
+    asset::AssetMetaCheck,
     core_pipeline::{prepass::NormalPrepass, Skybox},
     prelude::*,
 };
@@ -19,9 +26,20 @@ use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlineP
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
-        .add_plugins((introduction::plugin, rules::plugin, pause_menu::plugin, home::plugin))
         .add_plugins((
-            DefaultPlugins,
+            introduction::plugin,
+            rules::plugin,
+            pause_menu::plugin,
+            home::plugin,
+        ))
+        .add_plugins((
+            DefaultPlugins.set(AssetPlugin {
+                // Wasm builds will check for meta files (that don't exist) if this isn't set.
+                // This causes errors and even panics in web builds on itch.
+                // See https://github.com/bevyengine/bevy_github_ci_template/issues/48.
+                meta_check: AssetMetaCheck::Never,
+                ..default()
+            }),
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
@@ -49,8 +67,10 @@ fn main() {
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
         .init_state::<TestSkyboxState>()
-        .add_systems(Update,
-            test_skybox.run_if(in_state(TestSkyboxState::Waiting)))
+        .add_systems(
+            Update,
+            test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
+        )
         .insert_resource(MovementSettings::default())
         .run();
 }

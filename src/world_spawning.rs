@@ -1,14 +1,9 @@
-use avian3d::{
-    math::*,
-    prelude::{Collider, RigidBody},
-};
+use avian3d::prelude::{Collider, RigidBody};
 use bevy::{
     ecs::system::EntityCommands,
     gltf::{GltfMesh, GltfNode},
-    pbr::{NotShadowCaster, NotShadowReceiver},
     prelude::*,
 };
-use bevy_camera_extras::*;
 
 use crate::*;
 use on_spawn::*;
@@ -16,8 +11,9 @@ use on_spawn::*;
 pub mod on_spawn;
 
 use self::{
-    asset_loading::GltfAssets, home::Home, lockpicking::LockPicker,
-    player_controller::pick_up::UpPickable,
+    asset_loading::GltfAssets,
+    home::Home,
+    player_controller::{pick_up::UpPickable, Player},
 };
 
 // Marker components can be attached with the SpawnHook based on a function that is provided with the
@@ -51,18 +47,29 @@ impl Default for SpawnHook {
         let hook: Hook = Box::new(|name, commands| {
             let class = name.split('.').next().unwrap_or(name);
 
-            match class {
-                "Bicycle" => {
-                    commands.insert(Bicycle);
-                }
-                "Car" => {
-                    commands.insert(Car);
-                }
-                "Home" => {
-                    commands.insert(Home);
-                }
-                _ => {
-                    commands.insert(MapElement);
+            for keyword in class.split(' ') {
+                match keyword {
+                    "Bicycle" => {
+                        commands.insert(Bicycle);
+                    }
+                    "Illegal" => {
+                        commands.insert(Illegal);
+                    }
+                    "Player" => {
+                        commands.insert(Player);
+                    }
+                    "Car" => {
+                        commands.insert(Car);
+                    }
+                    "Home" => {
+                        commands.insert(Home);
+                    }
+                    "Trash" => {
+                        commands.insert(Trash);
+                    }
+                    _ => {
+                        commands.insert(MapElement);
+                    }
                 }
             }
         });
@@ -152,38 +159,6 @@ pub fn spawn_after_world(
         },
         ..default()
     });
-
-    // player
-    let player = commands
-        .spawn((
-            PbrBundle {
-                mesh: meshes.add(Capsule3d::new(0.4, 1.0)),
-                material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-                transform: Transform::from_xyz(0.0, 1.5, 0.0),
-                ..default()
-            },
-            player_controller::CharacterControllerBundle::new(
-                Collider::capsule(0.4, 1.0),
-                Vector::NEG_Y * 9.81 * 2.0,
-            )
-            .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
-            LockPicker::default(),
-            NotShadowCaster,
-            NotShadowReceiver,
-        ))
-        .id();
-
-    // camera
-    commands.spawn((
-        Camera3dBundle {
-            transform: Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
-        CameraControls {
-            attach_to: player,
-            camera_mode: CameraMode::FirstPerson,
-        },
-    ));
 
     // a cube to move around
     commands
