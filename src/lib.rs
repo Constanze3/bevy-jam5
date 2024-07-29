@@ -1,8 +1,8 @@
 use bevy::prelude::States;
 
 pub mod asset_loading;
-pub mod world_spawning;
 pub mod lockpicking;
+pub mod world_spawning;
 
 pub mod car_controller;
 pub mod home;
@@ -12,10 +12,10 @@ pub mod points;
 pub mod simulation_state;
 
 pub mod cubemap_factory;
+pub mod introduction;
+pub mod pause_menu;
 pub mod resources;
 pub mod rules;
-pub mod pause_menu;
-pub mod introduction;
 
 #[derive(States, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub enum GameState {

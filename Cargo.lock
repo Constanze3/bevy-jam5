@@ -402,6 +402,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy-jam5"
+version = "0.1.0"
+dependencies = [
+ "avian3d",
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_asset_loader",
+ "bevy_camera_extras",
+ "bevy_flycam",
+ "bevy_outline_post_process",
+ "rand",
+]
+
+[[package]]
 name = "bevy_a11y"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1291,20 +1305,6 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
  "winit",
-]
-
-[[package]]
-name = "bicycle-mafia"
-version = "0.1.0"
-dependencies = [
- "avian3d",
- "bevy",
- "bevy-inspector-egui",
- "bevy_asset_loader",
- "bevy_camera_extras",
- "bevy_flycam",
- "bevy_outline_post_process",
- "rand",
 ]
 
 [[package]]
