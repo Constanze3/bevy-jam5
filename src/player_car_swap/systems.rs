@@ -44,60 +44,61 @@ pub fn enter_car(
     keys: Res<ButtonInput<KeyCode>>,
     transforms: Query<&Transform>,
 ) {
-    if keys.just_pressed(KeyCode::AltLeft) {
-        //println!("player count: {:#?}", players.iter().len());
-        let (player_entity, mut rider, mut collision_layers, mut rigid_body) =
-            match players.get_single_mut() {
-                Ok(res) => res,
-                Err(err) => {
-                    warn!("unable to get singleton, reason: {:#}", err);
-                    return;
-                }
-            };
-        let car_entity = match cars.get_single() {
+    let mount_car_requested = keys.just_pressed(KeyCode::KeyE);
+    let unmount_car_requested = keys.just_pressed(KeyCode::ShiftLeft);
+
+    if !mount_car_requested && !unmount_car_requested { return; }
+
+    let (player_entity, mut rider, mut collision_layers, mut rigid_body) =
+        match players.get_single_mut() {
             Ok(res) => res,
             Err(err) => {
                 warn!("unable to get singleton, reason: {:#}", err);
                 return;
             }
         };
-
-        let Ok(car_transform) = transforms.get(car_entity) else {
-            warn!("can't enter/leave car, car has no transform");
+    let car_entity = match cars.get_single() {
+        Ok(res) => res,
+        Err(err) => {
+            warn!("unable to get singleton, reason: {:#}", err);
             return;
-        };
-        let Ok(player_transform) = transforms.get(player_entity) else {
-            warn!("cant enter/leave car, player has no transform");
-            return;
-        };
-        for mut camera in cameras.iter_mut() {
-            if camera.attach_to == player_entity {
-                if player_is_close_enough_to_ride(
-                    player_transform.translation,
-                    car_transform.translation,
-                ) {
-                    camera.attach_to = car_entity;
-                    camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
+        }
+    };
 
-                    rider.ride = Some(car_entity);
-                    *collision_layers =
-                        CollisionLayers::new(CollisionMask::Car, CollisionMask::Player);
-                    *rigid_body = RigidBody::Static;
-                }
-            } else if camera.attach_to == car_entity {
+    let Ok(car_transform) = transforms.get(car_entity) else {
+        warn!("can't enter/leave car, car has no transform");
+        return;
+    };
+    let Ok(player_transform) = transforms.get(player_entity) else {
+        warn!("cant enter/leave car, player has no transform");
+        return;
+    };
+    for mut camera in cameras.iter_mut() {
+        if camera.attach_to == player_entity {
+            if mount_car_requested && player_is_close_enough_to_ride(
+                player_transform.translation,
+                car_transform.translation,
+            ) {
+                camera.attach_to = car_entity;
+                camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
+
+                rider.ride = Some(car_entity);
+                *collision_layers =
+                    CollisionLayers::new(CollisionMask::Car, CollisionMask::Player);
+                *rigid_body = RigidBody::Static;
+            }
+        } else if camera.attach_to == car_entity {
+            if unmount_car_requested {
                 camera.attach_to = player_entity;
                 camera.camera_mode = CameraMode::FirstPerson;
 
                 rider.ride = None;
                 *collision_layers = CollisionLayers::new(CollisionMask::Player, CollisionMask::Car);
                 *rigid_body = RigidBody::Dynamic;
-            } else {
-                warn!("not set to player or car. Defaulting to player.");
-                camera.attach_to = player_entity;
             }
-            //camera.attach_to = player_entity
+        } else {
+            warn!("not set to player or car. Defaulting to player.");
+            camera.attach_to = player_entity;
         }
     }
 }
-
-// pub fn ride_car()

@@ -10,7 +10,6 @@ mod trash;
 pub use bicycle::*;
 pub use car::*;
 pub use map::*;
-pub use player::*;
 pub use trash::*;
 
 use crate::GameState;

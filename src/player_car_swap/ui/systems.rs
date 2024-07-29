@@ -33,7 +33,7 @@ pub fn setup_car_riding_ui(mut commands: Commands) {
                 TextBundle {
                     style: Style::default(),
                     text: Text::from_section(
-                        "(Press [LeftALT] to ride the car.)",
+                        "(Press [E] to ride the car.)",
                         middle_of_screen_info_text_style(),
                     ),
                     ..Default::default()
@@ -46,7 +46,7 @@ pub fn setup_car_riding_ui(mut commands: Commands) {
                 TextBundle {
                     style: Style::default(),
                     text: Text::from_section(
-                        "(Press [LeftALT] to stop riding the car.)",
+                        "(Press [LeftShift] to stop riding the car.)",
                         middle_of_screen_info_text_style(),
                     ),
                     ..Default::default()
