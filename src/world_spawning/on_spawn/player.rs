@@ -6,7 +6,7 @@ use bevy::{
     pbr::{NotShadowCaster, NotShadowReceiver},
     prelude::*,
 };
-use bevy_camera_extras::{CameraControls, CameraMode};
+use bevy_camera_extras::{CameraControls, CameraDistanceOffset, CameraDistanceOffsetCache, CameraMode};
 
 use crate::{
     lockpicking::LockPicker,
@@ -36,6 +36,7 @@ pub(super) fn spawn(q_player: Query<Entity, Added<Player>>, mut commands: Comman
                 attach_to: player_entity,
                 camera_mode: CameraMode::FirstPerson,
             },
+            CameraDistanceOffsetCache(CameraDistanceOffset(Vec2::new(10.0, 5.0)))
         ));
     }
 }

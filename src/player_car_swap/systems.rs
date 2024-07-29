@@ -5,6 +5,7 @@ use avian3d::prelude::RigidBody;
 use bevy::prelude::*;
 use bevy_camera_extras::CameraControls;
 use bevy_camera_extras::CameraDistanceOffset;
+use bevy_camera_extras::CameraDistanceOffsetCache;
 use bevy_camera_extras::CameraMode;
 
 use crate::player_controller::*;
