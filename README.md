@@ -1,7 +1,7 @@
 # 🚲 Dutch Bike Mafia: Illegal Bike Reclamation
 
 ## Overview
-Welcome to **Bike Buster**, the thrilling and ironically heroic game where you reclaim illegally parked bicycles in a bustling urban landscape! Developed using the Bevy game engine for the **Bevy Game Jam 5**, this project combines humor, stealth, and a touch of urban justice to create an engaging and entertaining experience.
+Welcome to **Dutch Bike Mafia**, the thrilling and ironically heroic game where you reclaim illegally parked bicycles in a bustling urban landscape! Developed using the Bevy game engine for the **Bevy Game Jam 5**, this project combines humor, stealth, and a touch of urban justice to create an engaging and entertaining experience.
 
 ## Gameplay
 In **Dutch Bike Mafia**, you play as a stealthy (or not) agent tasked with the noble mission of clearing the city of illegally parked bikes. Points are awarded for each illegal bike you reclaim, but be careful—picking up a legally parked bike will cost you points!
