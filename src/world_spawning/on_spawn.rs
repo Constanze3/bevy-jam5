@@ -5,11 +5,13 @@ mod car;
 mod home;
 mod map;
 mod player;
+mod trash;
 
 pub use bicycle::*;
 pub use car::*;
 pub use map::*;
 pub use player::*;
+pub use trash::*;
 
 use crate::GameState;
 
@@ -24,6 +26,7 @@ pub fn plugin(app: &mut App) {
             bicycle::spawn,
             home::spawn,
             player::spawn,
+            trash::spawn,
         )
             .run_if(in_state(GameState::Spawning))
             .after(spawn_world),

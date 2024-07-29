@@ -5,10 +5,10 @@ use crate::{resources::MenuAction, GameState};
 pub fn plugin(app: &mut App) {
     app.add_event::<MenuAction<RulesUi>>()
         .add_systems(OnEnter(GameState::Playing), setup)
-        .add_systems(Update, (
-            keyboard_input,
-            events_handler,
-        ).run_if(in_state(GameState::Playing)));
+        .add_systems(
+            Update,
+            (keyboard_input, events_handler).run_if(in_state(GameState::Playing)),
+        );
 }
 
 #[derive(Component)]
@@ -34,15 +34,23 @@ pub fn events_handler(
 
     for event in event_reader.read() {
         match event {
-            MenuAction::Hide => { *visibility = Visibility::Hidden; }
-            MenuAction::Show => { *visibility = Visibility::Visible; }
-            MenuAction::Toggle => { 
-                match visibility.clone() {
-                    Visibility::Visible => { *visibility = Visibility::Hidden; }
-                    Visibility::Hidden => { *visibility = Visibility::Visible; }
-                    _ => { *visibility = Visibility::Inherited; }
-                }
+            MenuAction::Hide => {
+                *visibility = Visibility::Hidden;
             }
+            MenuAction::Show => {
+                *visibility = Visibility::Visible;
+            }
+            MenuAction::Toggle => match visibility.clone() {
+                Visibility::Visible => {
+                    *visibility = Visibility::Hidden;
+                }
+                Visibility::Hidden => {
+                    *visibility = Visibility::Visible;
+                }
+                _ => {
+                    *visibility = Visibility::Inherited;
+                }
+            },
             _ => {}
         }
     }
@@ -50,10 +58,13 @@ pub fn events_handler(
 
 fn setup(mut commands: Commands) {
     let rules = [
-        "no bicycles allowed in front of the church",
-        "another rule: don't place bikes on ...",
-        "rule 3",
-    ];
+    "Bicycles are prohibited on public roads.",
+    "Yellow bicycles are prohibited from being placed next to street lamps to prevent confusion among drivers at night.",
+    "Bicycles that are a mix of the colors white and red are prohibited at gas stations to maintain aesthetic standards.",
+    "Bicycles colored blue are prohibited due to the mayor's preference.",
+    "If every witch is accompanied by a dragon, all black bicycles next to trash cans must be collected; otherwise, all white bicycles next to trash cans must be collected.",
+    "Bicycles are prohibited from being placed on the roofs of buildings."
+];
 
     commands
         .spawn((
@@ -105,7 +116,7 @@ fn setup(mut commands: Commands) {
                         ),
                         ..default()
                     });
-                    
+
                     // notice
                     parent.spawn(TextBundle {
                         style: Style {

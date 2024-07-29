@@ -64,6 +64,9 @@ impl Default for SpawnHook {
                     "Home" => {
                         commands.insert(Home);
                     }
+                    "Trash" => {
+                        commands.insert(Trash);
+                    }
                     _ => {
                         commands.insert(MapElement);
                     }
