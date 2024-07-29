@@ -1,9 +1,15 @@
 use avian3d::math::*;
-use bevy::{ecs::prelude::*, prelude::{Deref, DerefMut, KeyCode}, reflect::Reflect};
+use bevy::{
+    ecs::prelude::*,
+    prelude::{Deref, DerefMut, KeyCode},
+    reflect::Reflect,
+};
 
 /// A marker component indicating that an entity is using a character controller.
-#[derive(Component, Reflect)]
-pub struct CharacterController;
+#[derive(Component, Reflect, Default)]
+pub struct CharacterController {
+    pub locked: bool,
+}
 
 /// A marker component indicating that an entity is on the ground.
 #[derive(Component, Reflect)]
@@ -28,14 +34,13 @@ pub struct ControllerGravity(pub Vector);
 #[derive(Component, Clone, Copy, Deref, DerefMut, Default)]
 pub struct DesiredDirection(pub Vector3);
 
-
-
-
-
-
 #[derive(Component, Reflect)]
 pub struct Player;
 
 /// the camera the player treats as "its" camera.
 #[derive(Component)]
 pub struct BoundCamera(pub Entity);
+
+// marker component for the collider that sticks bikes to the car
+#[derive(Component)]
+pub struct Sticky;

@@ -1,5 +1,8 @@
+use crate::player_controller::{pick_up::UpPickable, CharacterController};
+
 use super::*;
 
+use avian3d::dynamics::rigid_body::RigidBody;
 use bevy::prelude::*;
 
 pub fn check_fail_clicks(
@@ -14,11 +17,11 @@ pub fn check_fail_clicks(
         match *interaction {
             Interaction::Pressed => {
                 for (e, mut target) in lockpick_targets.iter_mut() {
-                    println!("failed pick");
+                    // println!("failed pick");
                     target.failed_pick_counter += 1;
 
                     if target.failed_picks_before_break < target.failed_pick_counter {
-                        println!("oops, lockpick broke..");
+                        // println!("oops, lockpick broke..");
                         commands.entity(e).remove::<LockPickTarget>();
                     }
                 }
@@ -41,12 +44,15 @@ pub fn check_success_clicks(
         match *interaction {
             Interaction::Pressed => {
                 for (target_entity, lock_setings, mut target) in lockpick_targets.iter_mut() {
-                    println!("succeded pick");
+                    // println!("succeded pick");
                     target.successful_pick_counter += 1;
 
                     if target.successful_picks_before_unlock < target.successful_pick_counter {
-                        println!("successful unlock!");
-                        commands.entity(target_entity).remove::<Locked>();
+                        // println!("successful unlock!");
+                        commands
+                            .entity(target_entity)
+                            .remove::<Locked>()
+                            .remove::<LockPickTarget>();
                     }
 
                     if lock_setings.move_on_good_pick {
@@ -60,49 +66,22 @@ pub fn check_success_clicks(
     }
 }
 
-// TODO move this to interaction
-pub fn check_for_lockpick_request(
-    mut pickers: Query<(Entity, &mut LockPicker, &Transform), Without<Locked>>,
-    locked_locks: Query<(Entity, &Transform), (With<Locked>, Without<LockPickTarget>)>,
-    keys: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
+pub fn on_remove_lockpick_target(
+    mut removals: RemovedComponents<LockPickTarget>,
+    mut q_object: Query<&mut RigidBody>,
+    mut q_player: Query<&mut CharacterController>,
 ) {
-    if keys.pressed(KeyCode::KeyE) {
-        for (e, mut picker, picker_trans) in pickers.iter_mut() {
-            // dont overwrite lock picking if its already in progress!
-            if picker.target.is_some() {
-                return;
-            }
+    for entity in removals.read() {
+        let mut character_controller = q_player.get_single_mut().unwrap();
+        character_controller.locked = false;
 
-            let locks = locked_locks
-                .iter()
-                .map(|(lock, trans)| (lock, trans.translation))
-                .collect::<Vec<_>>();
+        let mut rigidbody = q_object.get_mut(entity).unwrap();
+        *rigidbody = RigidBody::Dynamic;
+    }
+}
 
-            let Some(first_lock) = locks.first() else {
-                return;
-            };
-
-            let closest_lock = *locks.iter().fold(first_lock, |current, candidate| {
-                if current.1.distance(picker_trans.translation)
-                    > candidate.1.distance(picker_trans.translation)
-                {
-                    candidate
-                } else {
-                    current
-                }
-            });
-
-            picker.target = Some(closest_lock.0);
-
-            commands.entity(closest_lock.0).insert(LockPickTarget {
-                picker: e,
-                successful_pick_counter: 0,
-                failed_pick_counter: 0,
-                successful_picks_before_unlock: 3,
-                failed_picks_before_break: 1,
-            });
-            println!("attempting to pick {:#?}", picker.target)
-        }
+pub fn on_remove_lock(mut removals: RemovedComponents<Locked>, mut commands: Commands) {
+    for entity in removals.read() {
+        commands.entity(entity).insert(UpPickable);
     }
 }

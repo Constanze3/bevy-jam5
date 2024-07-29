@@ -1,5 +1,8 @@
-use crate::*;
-use avian3d::prelude::{Collider, RigidBody};
+use avian3d::{
+    collision::CollisionMargin,
+    dynamics::ccd::SweptCcd,
+    prelude::{Collider, RigidBody},
+};
 use bevy::prelude::*;
 
 #[derive(Resource)]
@@ -8,27 +11,23 @@ pub struct Map(pub Entity);
 #[derive(Component)]
 pub struct MapElement;
 
-pub fn plugin(app: &mut App) {
-    app.add_systems(Startup, spawn)
-        .add_systems(Update, spawn_element.run_if(in_state(GameState::Playing)));
-}
-
-fn spawn(mut commands: Commands) {
+pub(super) fn spawn(mut commands: Commands) {
     let map_entity = commands
         .spawn((
             Name::new("Map"),
             SpatialBundle::default(),
             RigidBody::Static,
+            SweptCcd::default(),
         ))
         .id();
 
     commands.insert_resource(Map(map_entity));
 }
 
-fn spawn_element(
+pub(super) fn spawn_element(
     map: Res<Map>,
     q_map_element: Query<(Entity, &Children), Added<MapElement>>,
-    mesh_handles: Query<&Handle<Mesh>>,
+    q_child: Query<&Handle<Mesh>>,
     mut commands: Commands,
     meshes: Res<Assets<Mesh>>,
 ) {
@@ -37,10 +36,11 @@ fn spawn_element(
 
         // generate colliders for children
         for child in children.iter() {
-            let mesh = meshes.get(mesh_handles.get(*child).unwrap()).unwrap();
-            commands
-                .entity(*child)
-                .insert(Collider::trimesh_from_mesh(mesh).unwrap());
+            let mesh = meshes.get(q_child.get(*child).unwrap()).unwrap();
+            commands.entity(*child).insert((
+                Collider::trimesh_from_mesh(mesh).unwrap(),
+                CollisionMargin(0.05),
+            ));
         }
     }
 }

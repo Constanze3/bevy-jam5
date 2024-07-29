@@ -5,17 +5,20 @@ use avian3d::{
 use bevy::{
     ecs::system::EntityCommands,
     gltf::{GltfMesh, GltfNode},
+    pbr::{NotShadowCaster, NotShadowReceiver},
     prelude::*,
 };
 use bevy_camera_extras::*;
 
-use crate::player_controller::*;
 use crate::*;
-
-mod on_spawn;
-
-use self::{asset_loading::GltfAssets, lockpicking::LockPicker};
 use on_spawn::*;
+
+pub mod on_spawn;
+
+use self::{
+    asset_loading::GltfAssets, home::Home, lockpicking::LockPicker,
+    player_controller::pick_up::UpPickable,
+};
 
 // Marker components can be attached with the SpawnHook based on a function that is provided with the
 // name of the object.
@@ -31,7 +34,7 @@ impl Plugin for SpawnWorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(on_spawn::plugin)
             .add_systems(
-                OnEnter(GameState::Playing),
+                OnEnter(GameState::Spawning),
                 (spawn_world, spawn_after_world).chain(),
             )
             .init_resource::<SpawnHook>();
@@ -51,6 +54,12 @@ impl Default for SpawnHook {
             match class {
                 "Bicycle" => {
                     commands.insert(Bicycle);
+                }
+                "Car" => {
+                    commands.insert(Car);
+                }
+                "Home" => {
+                    commands.insert(Home);
                 }
                 _ => {
                     commands.insert(MapElement);
@@ -120,11 +129,12 @@ pub fn spawn_after_world(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut commands: Commands,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     // ambient light
     commands.insert_resource(AmbientLight {
-        color: Color::srgb_u8(182, 205, 214),
-        brightness: 500.0,
+        color: Color::srgb_u8(224, 208, 208),
+        brightness: 600.0,
     });
 
     // sunlight
@@ -152,9 +162,14 @@ pub fn spawn_after_world(
                 transform: Transform::from_xyz(0.0, 1.5, 0.0),
                 ..default()
             },
-            CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
-                .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+            player_controller::CharacterControllerBundle::new(
+                Collider::capsule(0.4, 1.0),
+                Vector::NEG_Y * 9.81 * 2.0,
+            )
+            .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
             LockPicker::default(),
+            NotShadowCaster,
+            NotShadowReceiver,
         ))
         .id();
 
@@ -171,14 +186,25 @@ pub fn spawn_after_world(
     ));
 
     // a cube to move around
-    commands.spawn((
-        RigidBody::Dynamic,
-        Collider::cuboid(1.0, 1.0, 1.0),
-        PbrBundle {
-            mesh: meshes.add(Cuboid::default()),
-            material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
-            transform: Transform::from_xyz(3.0, 2.0, 3.0),
-            ..default()
-        },
-    ));
+    commands
+        .spawn((
+            SpatialBundle {
+                transform: Transform::from_xyz(3.0, 2.0, 3.0),
+                ..default()
+            },
+            RigidBody::Dynamic,
+            UpPickable,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                PbrBundle {
+                    mesh: meshes.add(Cuboid::default()),
+                    material: materials.add(Color::srgb(0.8, 0.7, 0.6)),
+                    ..default()
+                },
+                Collider::cuboid(1.0, 1.0, 1.0),
+            ));
+        });
+
+    next_state.set(GameState::Playing);
 }

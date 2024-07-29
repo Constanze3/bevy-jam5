@@ -1,5 +1,5 @@
 use asset_loading::AssetLoaderPlugin;
-use avian3d::{math::*, prelude::*};
+use avian3d::prelude::*;
 use bevy::{
     core_pipeline::{prepass::NormalPrepass, Skybox},
     prelude::*,
@@ -7,28 +7,29 @@ use bevy::{
 use bevy_camera_extras::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::car_controller::*;
 use bevy_jam5::player_car_swap::*;
 use bevy_jam5::player_controller::*;
+use bevy_jam5::points::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
+use bevy_jam5::{car_controller::*, lockpicking::LockpickingPlugin};
 
-//use plugin::*;
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
 
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
+        .add_plugins((rules::plugin, home::plugin))
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
-            // PlayerPlugin,
             CarControllerPlugin,
             CubemapFactoryPlugin,
             PlayerCarSwapPlugin,
             CharacterControllerPlugin,
+            PointsPlugin,
             OutlinePostProcessPlugin,
             AssetLoaderPlugin,
             SpawnWorldPlugin,
@@ -41,7 +42,10 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
+            LockpickingPlugin,
+            // PhysicsDebugPlugin::default(),
         ))
+        .insert_resource(SubstepCount(50))
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
         .init_state::<TestSkyboxState>()

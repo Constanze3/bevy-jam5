@@ -1,41 +1,42 @@
+use super::*;
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 
 use crate::player_car_swap::Rider;
 
 use super::*;
+use interaction;
 
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
     fn build(&self, app: &mut App) {
-        app
-        //.add_event::<MovementAction>()
-        .insert_resource(PlayerControls::default())
-        .insert_resource(PlayerSettings::default())
-        .add_systems(
-            Update,
-            (
-                //keyboard_input,
-                //gamepad_input,
-                update_grounded,
-                apply_gravity,
-                player_look,
-                movement,
-                apply_movement_damping,
+        app.add_plugins(interaction::plugin)
+            //.add_event::<MovementAction>()
+            .insert_resource(PlayerControls::default())
+            .insert_resource(PlayerSettings::default())
+            .add_systems(
+                Update,
+                (
+                    //keyboard_input,
+                    //gamepad_input,
+                    update_grounded,
+                    apply_gravity,
+                    player_look,
+                    movement,
+                    apply_movement_damping,
+                )
+                    .chain(),
             )
-                .chain(),
-        )
-        .add_systems(
-            // Run collision handling after collision detection.
-            //
-            // NOTE: The collision implementation here is very basic and a bit buggy.
-            //       A collide-and-slide algorithm would likely work better.
-            PostProcessCollisions,
-            kinematic_controller_collisions,
-        );
-        app.add_systems(Update, connect_camera_to_reciever)
-        ;
+            .add_systems(
+                // Run collision handling after collision detection.
+                //
+                // NOTE: The collision implementation here is very basic and a bit buggy.
+                //       A collide-and-slide algorithm would likely work better.
+                PostProcessCollisions,
+                kinematic_controller_collisions,
+            );
+        app.add_systems(Update, connect_camera_to_reciever);
     }
 }
 
@@ -59,9 +60,9 @@ pub struct CharacterControllerBundle {
     player_marker: Player,
     player_name: Name,
     desired_direction: DesiredDirection,
-    rider: Rider
+    rider: Rider,
+    locked_axes: LockedAxes,
 }
-
 
 /// A bundle that contains components for character movement.
 #[derive(Bundle)]
@@ -97,7 +98,7 @@ impl Default for MovementBundle {
 #[derive(PhysicsLayer)]
 pub enum CollisionMask {
     Player,
-    Car
+    Car,
 }
 
 impl CharacterControllerBundle {
@@ -107,7 +108,7 @@ impl CharacterControllerBundle {
         caster_shape.set_scale(Vector::ONE * 0.99, 10);
 
         Self {
-            character_controller: CharacterController,
+            character_controller: CharacterController::default(),
             rigid_body: RigidBody::Kinematic,
             collider,
             collision_layers: CollisionLayers::new(CollisionMask::Player, CollisionMask::Car),
@@ -122,11 +123,12 @@ impl CharacterControllerBundle {
             movement: MovementBundle::default(),
             player_marker: Player,
             desired_direction: DesiredDirection::default(),
-            player_name:  Name::new("player"),
+            player_name: Name::new("player"),
             rider: Rider {
                 ride: None,
-                bottom_pos: Vec3::default()
-            }
+                bottom_pos: Vec3::default(),
+            },
+            locked_axes: LockedAxes::new().lock_rotation_x().lock_rotation_z(),
         }
     }
 
@@ -141,9 +143,3 @@ impl CharacterControllerBundle {
         self
     }
 }
-
-
-
-
-
-

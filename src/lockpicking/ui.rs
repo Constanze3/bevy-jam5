@@ -2,7 +2,7 @@ use super::*;
 use bevy::{
     color::palettes::css::{DARK_GREEN, DARK_RED, GRAY, LIGHT_BLUE},
     prelude::*,
-    window::PrimaryWindow,
+    window::{CursorGrabMode, PrimaryWindow},
 };
 use rand::{thread_rng, Rng};
 
@@ -71,10 +71,10 @@ pub fn slide_sliding_pick_zones(
             // randomize the position of the new target
             let new_target_pos = rng.gen_range(0..(100 - width)) as f32;
 
-            println!(
-                "target pos, {:#} reached, setting new target, {:#}",
-                slide_target.target_pos, new_target_pos
-            );
+            // println!(
+            //     "target pos, {:#} reached, setting new target, {:#}",
+            //     slide_target.target_pos, new_target_pos
+            // );
 
             let new_target = SlideTarget {
                 speed: slide_target.speed,
@@ -89,9 +89,9 @@ pub fn slide_sliding_pick_zones(
             let target_pos_offset =
                 (slide_target.start_pos - target_pos_progress).clamp(0.0, slide_target.target_pos);
 
-            println!("target pos offset: {:#?}", target_pos_offset);
-            println!("target pos: {:#}", slide_target.target_pos);
-            println!("current pos: {:#}", current_pos);
+            // println!("target pos offset: {:#?}", target_pos_offset);
+            // println!("target pos: {:#}", slide_target.target_pos);
+            // println!("current pos: {:#}", current_pos);
 
             // move target
             style.left = Val::Percent(slide_target.target_pos - target_pos_offset)
@@ -119,10 +119,30 @@ pub fn randomize_lockpick_zone_position(
         let mut rng = thread_rng();
         let pos = rng.gen_range(0..(100 - width)) as f32;
 
-        println!("randomizing pos to {:#}", pos);
+        // println!("randomizing pos to {:#}", pos);
 
         zone.left = Val::Percent(pos);
         commands.entity(e).remove::<RandomizePos>();
+    }
+}
+
+pub fn despawn_lockpicking_minigame_ui(
+    mut removals: RemovedComponents<LockPickTarget>,
+    menus: Query<(Entity, &LockPickMenu)>,
+    mut commands: Commands,
+    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
+) {
+    for _ in removals.read() {
+        let mut primary_window = q_windows.single_mut();
+
+        for (e, _) in menus.iter() {
+            commands.entity(e).despawn_recursive();
+        }
+
+        primary_window.cursor.grab_mode = CursorGrabMode::Locked;
+        primary_window.cursor.visible = false;
+
+        return;
     }
 }
 
@@ -130,26 +150,24 @@ pub fn randomize_lockpick_zone_position(
 /// Amazing Ui design btw lmao.
 pub fn spawn_lockpicking_minigame_ui(
     menus: Query<(Entity, &LockPickMenu)>,
-    lock_pick_targets: Query<(&Locked, &LockPickTarget)>,
+    lock_pick_targets: Query<(&Locked, &LockPickTarget), Added<LockPickTarget>>,
     mut commands: Commands,
     time: Res<Time>,
+    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
 ) {
-    // despawn ui if nothing is being targeted for lock picking
-    if lock_pick_targets.is_empty() {
-        for (e, _) in menus.iter() {
-            commands.entity(e).despawn_recursive();
-        }
-        return;
-    }
-
-    // don't respawn menu if it already exists
-    if menus.iter().len() != 0 {
-        return;
-    }
-
-    let mut success_zone = None;
-    let mut zone_current_pos = None;
     for (lock_settings, _) in lock_pick_targets.iter() {
+        // don't respawn menu if it already exists
+        if menus.iter().len() != 0 {
+            return;
+        }
+
+        let mut primary_window = q_windows.single_mut();
+        primary_window.cursor.grab_mode = CursorGrabMode::None;
+        primary_window.cursor.visible = true;
+
+        let mut success_zone = None;
+        let mut zone_current_pos = None;
+
         commands
             .spawn((
                 LockPickMenu,
