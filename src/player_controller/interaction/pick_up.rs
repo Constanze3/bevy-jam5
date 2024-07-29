@@ -1,8 +1,8 @@
 use avian3d::{
     collision::{Collider, Sensor},
-    dynamics::rigid_body::{AngularVelocity, ExternalForce, Inertia, LinearVelocity, RigidBody},
+    dynamics::rigid_body::{ExternalForce, RigidBody},
 };
-use bevy::{ecs::system::QueryLens, math::VectorSpace, prelude::*};
+use bevy::{ecs::system::QueryLens, prelude::*};
 
 use super::*;
 use crate::player_controller::Player;

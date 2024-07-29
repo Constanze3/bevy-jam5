@@ -3,32 +3,20 @@ use bevy::prelude::*;
 use crate::{resources::MenuAction, GameState};
 
 pub fn plugin(app: &mut App) {
-    app.add_event::<MenuAction<RulesUi>>()
-        .add_systems(OnEnter(GameState::Playing), spawn_rules)
-        .add_systems(Update, (
-            keyboard_input,
-            rulesbook_events_handler,
-        ).run_if(in_state(GameState::Playing)));
+    app.add_event::<MenuAction<PauseMenuUi>>()
+        .add_systems(OnEnter(GameState::Playing), pause_menu_setup)
+        .add_systems(Update, menu_events_handler.run_if(in_state(GameState::Playing)));
 }
 
 #[derive(Component)]
-pub struct RulesUi;
+pub struct PauseMenuUi;
 
-fn keyboard_input(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut event_writer: EventWriter<MenuAction<RulesUi>>,
+pub fn menu_events_handler(
+    mut event_reader: EventReader<MenuAction<PauseMenuUi>>,
+    mut q_menu_visibility: Query<&mut Visibility, With<PauseMenuUi>>,
 ) {
-    if keys.just_pressed(KeyCode::Tab) {
-        event_writer.send(MenuAction::Toggle);
-    }
-}
-
-pub fn rulesbook_events_handler(
-    mut event_reader: EventReader<MenuAction<RulesUi>>,
-    mut q_visibility: Query<&mut Visibility, With<RulesUi>>,
-) {
-    let Ok(mut visibility) = q_visibility.get_single_mut() else {
-        warn!("Failed to unwrap rules book");
+    let Ok(mut visibility) = q_menu_visibility.get_single_mut() else {
+        warn!("Failed to unwrap pause menu");
         return;
     };
 
@@ -48,17 +36,11 @@ pub fn rulesbook_events_handler(
     }
 }
 
-fn spawn_rules(mut commands: Commands) {
-    let rules = [
-        "no bicycles allowed in front of the church",
-        "another rule: don't place bikes on ...",
-        "rule 3",
-    ];
-
+fn pause_menu_setup(mut commands: Commands) {
     commands
         .spawn((
-            RulesUi,
-            Name::new("Rules"),
+            PauseMenuUi,
+            Name::new("Pause Menu"),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.0),
@@ -77,7 +59,7 @@ fn spawn_rules(mut commands: Commands) {
                     style: Style {
                         display: Display::Flex,
                         flex_direction: FlexDirection::Column,
-                        height: Val::Percent(80.0),
+                        height: Val::Percent(20.0),
                         width: Val::Vh(60.0),
                         border: UiRect::all(Val::Px(2.0)),
                         overflow: Overflow::clip_y(),
@@ -88,7 +70,6 @@ fn spawn_rules(mut commands: Commands) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    // title
                     parent.spawn(TextBundle {
                         style: Style {
                             align_self: AlignSelf::Center,
@@ -96,7 +77,7 @@ fn spawn_rules(mut commands: Commands) {
                             ..default()
                         },
                         text: Text::from_section(
-                            "Rules",
+                            "Game Paused.",
                             TextStyle {
                                 font_size: 60.0,
                                 color: Color::BLACK,
@@ -106,7 +87,6 @@ fn spawn_rules(mut commands: Commands) {
                         ..default()
                     });
                     
-                    // notice
                     parent.spawn(TextBundle {
                         style: Style {
                             align_self: AlignSelf::Center,
@@ -114,7 +94,7 @@ fn spawn_rules(mut commands: Commands) {
                             ..default()
                         },
                         text: Text::from_section(
-                            "(Press [TAB] to open/close this Rules book.)",
+                            "(Press [ESC] to pause/unpause the game.)",
                             TextStyle {
                                 font_size: 15.0,
                                 color: Color::hsl(0.0, 0.0449, 0.349),
@@ -123,47 +103,6 @@ fn spawn_rules(mut commands: Commands) {
                         ),
                         ..default()
                     });
-
-                    // gap
-                    parent.spawn(NodeBundle {
-                        style: Style {
-                            height: Val::Px(5.0),
-                            ..default()
-                        },
-                        ..default()
-                    });
-
-                    // rules
-                    parent
-                        .spawn(NodeBundle {
-                            style: Style {
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                flex_grow: 1.0,
-                                padding: UiRect::horizontal(Val::Px(30.0)),
-                                ..default()
-                            },
-                            ..default()
-                        })
-                        .with_children(|parent| {
-                            for (i, rule) in rules.into_iter().enumerate() {
-                                parent.spawn(TextBundle {
-                                    style: Style {
-                                        margin: UiRect::top(Val::Px(15.0)),
-                                        ..default()
-                                    },
-                                    text: Text::from_section(
-                                        format!("{}. {}", i, rule),
-                                        TextStyle {
-                                            font_size: 20.0,
-                                            color: Color::BLACK,
-                                            ..default()
-                                        },
-                                    ),
-                                    ..default()
-                                });
-                            }
-                        });
                 });
         });
 }

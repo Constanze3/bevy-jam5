@@ -1,4 +1,16 @@
+use std::marker::PhantomData;
+
 use bevy::prelude::*;
+
+#[derive(Event)]
+pub enum MenuAction<T> {
+    Hide,
+    Show,
+    Toggle,
+
+    #[allow(dead_code)]
+    _Phantom(PhantomData<T>),
+}
 
 #[derive(Resource)]
 pub struct MovementSettings {

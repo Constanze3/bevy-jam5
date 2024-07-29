@@ -1,7 +1,7 @@
 use avian3d::prelude::CollisionLayers;
-use avian3d::prelude::GravityScale;
+// use avian3d::prelude::GravityScale;
 use avian3d::prelude::RigidBody;
-use avian3d::prelude::ShapeCaster;
+// use avian3d::prelude::ShapeCaster;
 use bevy::prelude::*;
 use bevy_camera_extras::CameraControls;
 use bevy_camera_extras::CameraDistanceOffset;
@@ -24,13 +24,21 @@ use super::*;
 //         }
 //     }
 // }
-use avian3d::prelude::LayerMask;
+// use avian3d::prelude::LayerMask;
+
+pub(crate) fn player_is_close_enough_to_ride(player_translation: Vec3, car_translation: Vec3) -> bool {
+    player_translation.distance(car_translation) <= 8.0
+}
+
+pub(crate) fn player_is_riding_car(rider: &Rider) -> bool {
+    return rider.ride.is_some();
+}
+
 pub fn enter_car(
     mut cameras: Query<&mut CameraControls>,
     mut players: Query<(Entity, &mut Rider, &mut CollisionLayers, &mut RigidBody), With<Player>>,
-    mut cars: Query<Entity, With<CarController>>,
+    cars: Query<Entity, With<CarController>>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
     transforms: Query<&Transform>,
 ) {
     if keys.just_pressed(KeyCode::AltLeft) {
@@ -43,7 +51,7 @@ pub fn enter_car(
                     return;
                 }
             };
-        let (car_entity) = match cars.get_single() {
+        let car_entity = match cars.get_single() {
             Ok(res) => res,
             Err(err) => {
                 warn!("unable to get singleton, reason: {:#}", err);
@@ -61,11 +69,10 @@ pub fn enter_car(
         };
         for mut camera in cameras.iter_mut() {
             if camera.attach_to == player_entity {
-                if player_transform
-                    .translation
-                    .distance(car_transform.translation)
-                    <= 8.0
-                {
+                if player_is_close_enough_to_ride(
+                    player_transform.translation, 
+                    car_transform.translation
+                ) {
                     camera.attach_to = car_entity;
                     camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
 

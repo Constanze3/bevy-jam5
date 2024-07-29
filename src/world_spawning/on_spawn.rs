@@ -7,7 +7,6 @@ mod map;
 
 pub use bicycle::*;
 pub use car::*;
-pub use home::*;
 pub use map::*;
 
 use crate::GameState;

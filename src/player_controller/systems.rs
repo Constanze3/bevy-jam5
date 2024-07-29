@@ -2,7 +2,6 @@ use avian3d::{math::*, prelude::*};
 use bevy::{
     ecs::query::Has,
     input::mouse::MouseMotion,
-    math::VectorSpace,
     prelude::*,
     window::{CursorGrabMode, PrimaryWindow},
 };
