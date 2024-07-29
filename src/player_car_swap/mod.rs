@@ -7,3 +7,4 @@ pub mod ui;
 use systems::*;
 pub use components::*;
 pub use plugins::*;
+pub use resources::*;

@@ -1,4 +1,4 @@
-use crate::player_controller::{pick_up::UpPickable, CharacterController};
+use crate::player_controller::{lockpicking::LockPickEvent, pick_up::UpPickable, CharacterController};
 
 use super::*;
 
@@ -68,10 +68,12 @@ pub fn check_success_clicks(
 
 pub fn on_remove_lockpick_target(
     mut removals: RemovedComponents<LockPickTarget>,
+    mut lockpick_event_writer: EventWriter<LockPickEvent>,
     mut q_object: Query<&mut RigidBody>,
     mut q_player: Query<&mut CharacterController>,
 ) {
     for entity in removals.read() {
+        lockpick_event_writer.send(LockPickEvent::StopPick);
         let mut character_controller = q_player.get_single_mut().unwrap();
         character_controller.locked = false;
 

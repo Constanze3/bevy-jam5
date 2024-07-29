@@ -33,7 +33,7 @@ pub fn setup_car_riding_ui(mut commands: Commands) {
                 TextBundle {
                     style: Style::default(),
                     text: Text::from_section(
-                        "(Press [E] to ride the car.)",
+                        "(When looking at it, press [E] to ride the car.)",
                         middle_of_screen_info_text_style(),
                     ),
                     ..Default::default()

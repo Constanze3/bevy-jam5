@@ -4,7 +4,7 @@ use pick_up::*;
 
 use self::lockpicking::*;
 use super::Player;
-use crate::lockpicking::Locked;
+use crate::{lockpicking::Locked, player_car_swap::{Ridable, RideAction}};
 
 pub mod lockpicking;
 pub mod pick_up;
@@ -25,11 +25,13 @@ fn interact(
             Option<&Player>,
             Option<&UpPickable>,
             Option<&Locked>,
+            Option<&Ridable>,
         ),
         Without<Camera>,
     >,
     mut pick_up_ew: EventWriter<PickUpEvent>,
     mut lock_pick_ew: EventWriter<LockPickEvent>,
+    mut ride_ew: EventWriter<RideAction>,
 ) {
     if keys.just_pressed(KeyCode::KeyE) {
         let transform = q_camera.get_single().unwrap();
@@ -53,14 +55,18 @@ fn interact(
         };
         let parent_entity = parent.get();
 
-        let (entity, _, up_pickable, locked) = q_entities.get(parent_entity).unwrap();
+        let (entity, _, up_pickable, locked, mount) = q_entities.get(parent_entity).unwrap();
 
         if up_pickable.is_some() {
             pick_up_ew.send(PickUpEvent(entity));
         }
 
         if locked.is_some() {
-            lock_pick_ew.send(LockPickEvent(entity));
+            lock_pick_ew.send(LockPickEvent::Pick(entity));
+        }
+
+        if mount.is_some() {
+            ride_ew.send(RideAction::Mount(entity));
         }
     }
 }

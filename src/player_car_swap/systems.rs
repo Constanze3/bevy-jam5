@@ -7,7 +7,6 @@ use bevy_camera_extras::CameraControls;
 use bevy_camera_extras::CameraDistanceOffset;
 use bevy_camera_extras::CameraMode;
 
-use crate::car_controller::*;
 use crate::player_controller::*;
 
 use super::*;
@@ -37,24 +36,25 @@ pub(crate) fn player_is_riding_car(rider: &Rider) -> bool {
     return rider.ride.is_some();
 }
 
-pub fn enter_car(
+pub fn keyboard_input(
+    mut event_writer: EventWriter<RideAction>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+) {
+    let unmount = keyboard_input.any_pressed([KeyCode::ShiftLeft]);
+
+    if unmount {
+        event_writer.send(RideAction::Dismount);
+    }
+}
+
+pub fn handle_events(
     mut cameras: Query<&mut CameraControls>,
     mut players: Query<(Entity, &mut Rider, &mut CollisionLayers, &mut RigidBody), With<Player>>,
-    cars: Query<Entity, With<CarController>>,
-    keys: Res<ButtonInput<KeyCode>>,
+    mut event_reader: EventReader<RideAction>,
     transforms: Query<&Transform>,
 ) {
-    if keys.just_pressed(KeyCode::AltLeft) {
-        //println!("player count: {:#?}", players.iter().len());
-        let (player_entity, mut rider, mut collision_layers, mut rigid_body) =
-            match players.get_single_mut() {
-                Ok(res) => res,
-                Err(err) => {
-                    warn!("unable to get singleton, reason: {:#}", err);
-                    return;
-                }
-            };
-        let car_entity = match cars.get_single() {
+    let (player_entity, mut rider, mut collision_layers, mut rigid_body) =
+        match players.get_single_mut() {
             Ok(res) => res,
             Err(err) => {
                 warn!("unable to get singleton, reason: {:#}", err);
@@ -62,40 +62,54 @@ pub fn enter_car(
             }
         };
 
-        let Ok(car_transform) = transforms.get(car_entity) else {
-            warn!("can't enter/leave car, car has no transform");
-            return;
-        };
-        let Ok(player_transform) = transforms.get(player_entity) else {
-            warn!("cant enter/leave car, player has no transform");
-            return;
-        };
+    let Ok(player_transform) = transforms.get(player_entity) else {
+        warn!("cant enter/leave car, player has no transform");
+        return;
+    };
+
+    for event in event_reader.read() {
         for mut camera in cameras.iter_mut() {
             if camera.attach_to == player_entity {
-                if player_is_close_enough_to_ride(
-                    player_transform.translation,
-                    car_transform.translation,
-                ) {
-                    camera.attach_to = car_entity;
-                    camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
+                match event {
+                    RideAction::Mount(car_entity) => {
+                        let Ok(car_transform) = transforms.get(*car_entity) else {
+                            warn!("can't enter/leave car, car has no transform");
+                            return;
+                        };
 
-                    rider.ride = Some(car_entity);
-                    *collision_layers =
-                        CollisionLayers::new(CollisionMask::Car, CollisionMask::Player);
-                    *rigid_body = RigidBody::Static;
+                        if player_is_close_enough_to_ride(
+                            player_transform.translation,
+                            car_transform.translation,
+                        ) {
+                            camera.attach_to = *car_entity;
+                            camera.camera_mode =
+                                CameraMode::ThirdPerson(CameraDistanceOffset::default());
+
+                            rider.ride = Some(*car_entity);
+                            *collision_layers =
+                                CollisionLayers::new(CollisionMask::Car, CollisionMask::Player);
+                            *rigid_body = RigidBody::Static;
+                        }
+                    }
+                    _ => {}
                 }
-            } else if camera.attach_to == car_entity {
-                camera.attach_to = player_entity;
-                camera.camera_mode = CameraMode::FirstPerson;
+            } else if player_is_riding_car(&rider) {
+                match event {
+                    RideAction::Dismount => {
+                        camera.attach_to = player_entity;
+                        camera.camera_mode = CameraMode::FirstPerson;
 
-                rider.ride = None;
-                *collision_layers = CollisionLayers::new(CollisionMask::Player, CollisionMask::Car);
-                *rigid_body = RigidBody::Dynamic;
+                        rider.ride = None;
+                        *collision_layers =
+                            CollisionLayers::new(CollisionMask::Player, CollisionMask::Car);
+                        *rigid_body = RigidBody::Dynamic;
+                    }
+                    _ => {}
+                }
             } else {
                 warn!("not set to player or car. Defaulting to player.");
                 camera.attach_to = player_entity;
             }
-            //camera.attach_to = player_entity
         }
     }
 }
