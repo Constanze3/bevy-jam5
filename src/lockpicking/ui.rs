@@ -171,7 +171,7 @@ pub fn spawn_lockpicking_minigame_ui(
         commands
             .spawn((
                 LockPickMenu,
-                Name::new("lock picking mingiame ui"),
+                Name::new("lock picking minigame ui"),
                 NodeBundle {
                     style: Style {
                         width: Val::Percent(80.0),

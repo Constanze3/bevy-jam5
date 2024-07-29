@@ -16,7 +16,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
-        .add_plugins(LockpickingPlugin)
+        .add_plugins(LockPickingPlugin)
         .add_plugins(PhysicsPlugins::default())
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(CameraExtrasPlugin {
