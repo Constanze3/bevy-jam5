@@ -4,14 +4,14 @@ use crate::{resources::MenuAction, GameState};
 
 pub fn plugin(app: &mut App) {
     app.add_event::<MenuAction<PauseMenuUi>>()
-        .add_systems(OnEnter(GameState::Playing), pause_menu_setup)
-        .add_systems(Update, menu_events_handler.run_if(in_state(GameState::Playing)));
+        .add_systems(OnEnter(GameState::Playing), setup)
+        .add_systems(Update, events_handler.run_if(in_state(GameState::Playing)));
 }
 
 #[derive(Component)]
 pub struct PauseMenuUi;
 
-pub fn menu_events_handler(
+pub fn events_handler(
     mut event_reader: EventReader<MenuAction<PauseMenuUi>>,
     mut q_menu_visibility: Query<&mut Visibility, With<PauseMenuUi>>,
 ) {
@@ -36,7 +36,7 @@ pub fn menu_events_handler(
     }
 }
 
-fn pause_menu_setup(mut commands: Commands) {
+fn setup(mut commands: Commands) {
     commands
         .spawn((
             PauseMenuUi,

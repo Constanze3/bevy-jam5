@@ -1,64 +1,37 @@
 use bevy::prelude::*;
 
-use crate::{resources::MenuAction, GameState};
+use crate::GameState;
+
+// TODO: Display an introduction where the user is told what is going on, what the goal is, and then move onto the rules.
+// TODO: This part is NOT COMPLETED YET.
 
 pub fn plugin(app: &mut App) {
-    app.add_event::<MenuAction<RulesUi>>()
+    app
         .add_systems(OnEnter(GameState::Playing), setup)
         .add_systems(Update, (
             keyboard_input,
-            events_handler,
         ).run_if(in_state(GameState::Playing)));
 }
 
 #[derive(Component)]
-pub struct RulesUi;
-
-fn keyboard_input(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut event_writer: EventWriter<MenuAction<RulesUi>>,
-) {
-    if keys.just_pressed(KeyCode::Tab) {
-        event_writer.send(MenuAction::Toggle);
-    }
-}
-
-pub fn events_handler(
-    mut event_reader: EventReader<MenuAction<RulesUi>>,
-    mut q_visibility: Query<&mut Visibility, With<RulesUi>>,
-) {
-    let Ok(mut visibility) = q_visibility.get_single_mut() else {
-        warn!("Failed to unwrap rules book");
-        return;
-    };
-
-    for event in event_reader.read() {
-        match event {
-            MenuAction::Hide => { *visibility = Visibility::Hidden; }
-            MenuAction::Show => { *visibility = Visibility::Visible; }
-            MenuAction::Toggle => { 
-                match visibility.clone() {
-                    Visibility::Visible => { *visibility = Visibility::Hidden; }
-                    Visibility::Hidden => { *visibility = Visibility::Visible; }
-                    _ => { *visibility = Visibility::Inherited; }
-                }
-            }
-            _ => {}
-        }
-    }
-}
+pub struct IntroductionUi;
 
 fn setup(mut commands: Commands) {
-    let rules = [
-        "no bicycles allowed in front of the church",
-        "another rule: don't place bikes on ...",
-        "rule 3",
-    ];
+    set_page_up(&mut commands, 1, 4,
+        String::from("Welcome to the Dutch Bike Mafia, where your role is to uphold justice one bicycle at a time. In this bustling city, order teeters on the brink of chaos, and only the finest of our clandestine operatives can restore balance."));
+    set_page_up(&mut commands, 2, 4,
+        String::from("Your mission, should you choose to accept it (and you have), is to embark on a noble quest: the great bicycle reclamation. Your target? Bicycles illegally parked, abandoned in no-parking zones, cluttering sidewalks, and defying the meticulous laws of urban planning."));
+    set_page_up(&mut commands, 3, 4,
+        String::from("For each errant bicycle you liberate from its unlawful moorings, you earn a point in the grand ledger of justice. But beware! This mission is fraught with peril. Should you mistakenly apprehend a law-abiding bicycle, resting innocently within its designated zone, you will face a dire consequence: a deduction of two points. Yes, in this topsy-turvy world, one misstep can cost you dearly."));
+    set_page_up(&mut commands, 4, 4,
+        String::from("Remember, every bicycle you reclaim brings us closer to a utopia where pedestrians roam free and sidewalks are pristine. Embrace the irony of your task and revel in the absurdity of this urban crusade. Welcome to the team, where we enforce order by seizing chaos—one bike at a time."));
+}
 
+fn set_page_up(commands: &mut Commands, curr_page: i8, total_pages: i8, text: String) {
     commands
         .spawn((
-            RulesUi,
-            Name::new("Rules"),
+            IntroductionUi,
+            Name::new(format!("Introduction ({})", curr_page)),
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.0),
@@ -96,7 +69,7 @@ fn setup(mut commands: Commands) {
                             ..default()
                         },
                         text: Text::from_section(
-                            "Rules",
+                            format!("Introduction ({}/{})", curr_page, total_pages),
                             TextStyle {
                                 font_size: 60.0,
                                 color: Color::BLACK,
@@ -105,7 +78,7 @@ fn setup(mut commands: Commands) {
                         ),
                         ..default()
                     });
-                    
+
                     // notice
                     parent.spawn(TextBundle {
                         style: Style {
@@ -114,7 +87,7 @@ fn setup(mut commands: Commands) {
                             ..default()
                         },
                         text: Text::from_section(
-                            "(Press [TAB] to open/close this Rules book.)",
+                            "(Press [SPACE] to see the next page.)",
                             TextStyle {
                                 font_size: 15.0,
                                 color: Color::hsl(0.0, 0.0449, 0.349),
@@ -122,8 +95,8 @@ fn setup(mut commands: Commands) {
                             },
                         ),
                         ..default()
-                    });
-
+                    });    
+                    
                     // gap
                     parent.spawn(NodeBundle {
                         style: Style {
@@ -133,7 +106,7 @@ fn setup(mut commands: Commands) {
                         ..default()
                     });
 
-                    // rules
+                    // content
                     parent
                         .spawn(NodeBundle {
                             style: Style {
@@ -146,24 +119,31 @@ fn setup(mut commands: Commands) {
                             ..default()
                         })
                         .with_children(|parent| {
-                            for (i, rule) in rules.into_iter().enumerate() {
-                                parent.spawn(TextBundle {
-                                    style: Style {
-                                        margin: UiRect::top(Val::Px(15.0)),
+                            parent.spawn(TextBundle {
+                                style: Style {
+                                    margin: UiRect::top(Val::Px(15.0)),
+                                    ..default()
+                                },
+                                text: Text::from_section(
+                                    text, // TODO: You may or may not need some wrapping here, depending on the default behaviour.
+                                    TextStyle {
+                                        font_size: 20.0,
+                                        color: Color::BLACK,
                                         ..default()
                                     },
-                                    text: Text::from_section(
-                                        format!("{}. {}", i, rule),
-                                        TextStyle {
-                                            font_size: 20.0,
-                                            color: Color::BLACK,
-                                            ..default()
-                                        },
-                                    ),
-                                    ..default()
-                                });
-                            }
+                                ),
+                                ..default()
+                            });
                         });
                 });
         });
+}
+
+fn keyboard_input(
+    keys: Res<ButtonInput<KeyCode>>,
+) {
+    if keys.just_pressed(KeyCode::Space) {
+        // TODO: Toggle the pages
+        // After last page, it should open the rules book.
+    }
 }

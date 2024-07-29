@@ -4,10 +4,7 @@ use avian3d::{
 };
 use bevy::prelude::*;
 
-use crate::{
-    lockpicking::{Locked, SlideLinear, SlideSettings},
-    player_controller::pick_up::UpPickable,
-};
+use crate::{lockpicking::{Locked, SlideLinear, SlideSettings}};
 
 #[derive(Component)]
 pub struct Bicycle;

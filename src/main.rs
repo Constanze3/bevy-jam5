@@ -19,7 +19,7 @@ use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlineP
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
-        .add_plugins((rules::plugin, pause_menu::plugin, home::plugin))
+        .add_plugins((introduction::plugin, rules::plugin, pause_menu::plugin, home::plugin))
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
