@@ -108,7 +108,7 @@ impl CharacterControllerBundle {
         caster_shape.set_scale(Vector::ONE * 0.99, 10);
 
         Self {
-            character_controller: CharacterController,
+            character_controller: CharacterController::default(),
             rigid_body: RigidBody::Kinematic,
             collider,
             collision_layers: CollisionLayers::new(CollisionMask::Player, CollisionMask::Car),

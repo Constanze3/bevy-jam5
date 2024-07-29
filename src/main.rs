@@ -7,12 +7,12 @@ use bevy::{
 use bevy_camera_extras::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_jam5::car_controller::*;
 use bevy_jam5::player_car_swap::*;
 use bevy_jam5::player_controller::*;
 use bevy_jam5::points::*;
 use bevy_jam5::simulation_state::*;
 use bevy_jam5::{asset_loading, cubemap_factory::*, world_spawning::*, *};
+use bevy_jam5::{car_controller::*, lockpicking::LockpickingPlugin};
 
 use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlinePostProcessPlugin};
 
@@ -25,7 +25,6 @@ fn main() {
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             WorldInspectorPlugin::new(),
-            // PlayerPlugin,
             CarControllerPlugin,
             CubemapFactoryPlugin,
             PlayerCarSwapPlugin,
@@ -43,6 +42,7 @@ fn main() {
                 }),
                 movement_settings_override: None,
             },
+            LockpickingPlugin,
             // PhysicsDebugPlugin::default(),
         ))
         .insert_resource(SubstepCount(50))

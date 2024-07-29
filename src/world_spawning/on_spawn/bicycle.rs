@@ -4,7 +4,10 @@ use avian3d::{
 };
 use bevy::prelude::*;
 
-use crate::player_controller::pick_up::UpPickable;
+use crate::{
+    lockpicking::{Locked, SlideLinear, SlideSettings},
+    player_controller::pick_up::UpPickable,
+};
 
 #[derive(Component)]
 pub struct Bicycle;
@@ -16,12 +19,7 @@ pub(super) fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Comm
     for bicycle_entity in q_bicycle.iter() {
         commands
             .entity(bicycle_entity)
-            .insert((
-                RigidBody::Dynamic,
-                Mass(6.0),
-                SweptCcd::default(),
-                UpPickable,
-            ))
+            .insert((RigidBody::Dynamic, Mass(6.0), SweptCcd::default()))
             .with_children(|parent| {
                 parent.spawn((
                     Collider::cuboid(1.6032, 0.58, 0.06),
@@ -37,6 +35,14 @@ pub(super) fn spawn(q_bicycle: Query<Entity, Added<Bicycle>>, mut commands: Comm
                     Collider::cuboid(0.1, 0.1, 0.4),
                     TransformBundle::from_transform(Transform::from_xyz(0.27, 0.4, 0.0)),
                 ));
+            })
+            .insert(Locked {
+                success_zone_width: 10.0,
+                move_on_good_pick: true,
+                zone_slide_settings: SlideSettings::SlideLinear(SlideLinear {
+                    speed: 10.0,
+                    time_to_target: 1.5,
+                }),
             });
     }
 }

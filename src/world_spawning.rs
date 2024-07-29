@@ -10,13 +10,15 @@ use bevy::{
 };
 use bevy_camera_extras::*;
 
-use crate::player_controller::*;
 use crate::*;
 use on_spawn::*;
 
 pub mod on_spawn;
 
-use self::{asset_loading::GltfAssets, home::Home, pick_up::UpPickable};
+use self::{
+    asset_loading::GltfAssets, home::Home, lockpicking::LockPicker,
+    player_controller::pick_up::UpPickable,
+};
 
 // Marker components can be attached with the SpawnHook based on a function that is provided with the
 // name of the object.
@@ -160,8 +162,12 @@ pub fn spawn_after_world(
                 transform: Transform::from_xyz(0.0, 1.5, 0.0),
                 ..default()
             },
-            CharacterControllerBundle::new(Collider::capsule(0.4, 1.0), Vector::NEG_Y * 9.81 * 2.0)
-                .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+            player_controller::CharacterControllerBundle::new(
+                Collider::capsule(0.4, 1.0),
+                Vector::NEG_Y * 9.81 * 2.0,
+            )
+            .with_movement(30.0, 0.92, 7.0, (30.0 as Scalar).to_radians()),
+            LockPicker::default(),
             NotShadowCaster,
             NotShadowReceiver,
         ))
