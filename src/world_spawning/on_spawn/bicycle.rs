@@ -4,7 +4,7 @@ use avian3d::{
 };
 use bevy::prelude::*;
 
-use crate::{lockpicking::{Locked, SlideLinear, SlideSettings}};
+use crate::lockpicking::{Locked, SlideLinear, SlideSettings};
 
 #[derive(Component)]
 pub struct Bicycle;
