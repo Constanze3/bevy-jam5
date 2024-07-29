@@ -5,13 +5,13 @@ use avian3d::{
 use bevy::{ecs::system::QueryLens, prelude::*};
 
 use super::*;
-use crate::player_controller::Player;
-
+use crate::player_controller::{PickUpUIPlugin, Player};
 pub fn plugin(app: &mut App) {
     app.register_type::<HandConfig>()
         .init_resource::<HandConfig>()
         .init_resource::<Hand>()
         .add_event::<PickUpEvent>()
+        .add_plugins(PickUpUIPlugin)
         .add_systems(Update, ((pick_up).after(interact), drop, throw))
         .add_systems(PostUpdate, move_visual);
 }
@@ -47,7 +47,7 @@ pub enum Hand {
 }
 
 impl Hand {
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         *self == Hand::Empty
     }
 }

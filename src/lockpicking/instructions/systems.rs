@@ -19,7 +19,7 @@ pub fn setup_ui(mut commands: Commands) {
             NodeBundle {
                 style: Style {
                     display: Display::Block,
-                    margin: UiRect { left: Val::Auto, right: Val::Auto, top: Val::Auto, bottom: Val::Px(30.0) },
+                    margin: UiRect { left: Val::Auto, right: Val::Auto, top: Val::Auto, bottom: Val::Px(35.0) },
                     padding: UiRect::all(Val::Px(15.0)),
                     ..Default::default()
                 },
