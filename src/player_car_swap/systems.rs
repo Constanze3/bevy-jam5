@@ -5,6 +5,7 @@ use avian3d::prelude::RigidBody;
 use bevy::prelude::*;
 use bevy_camera_extras::CameraControls;
 use bevy_camera_extras::CameraDistanceOffset;
+use bevy_camera_extras::CameraDistanceOffsetCache;
 use bevy_camera_extras::CameraMode;
 
 use crate::car_controller::*;
@@ -38,7 +39,7 @@ pub(crate) fn player_is_riding_car(rider: &Rider) -> bool {
 }
 
 pub fn enter_car(
-    mut cameras: Query<&mut CameraControls>,
+    mut cameras: Query<(&mut CameraControls, Option<&CameraDistanceOffsetCache>)>,
     mut players: Query<(Entity, &mut Rider, &mut CollisionLayers, &mut RigidBody), With<Player>>,
     cars: Query<Entity, With<CarController>>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -73,14 +74,19 @@ pub fn enter_car(
         warn!("cant enter/leave car, player has no transform");
         return;
     };
-    for mut camera in cameras.iter_mut() {
+    for (mut camera, third_person_offset) in cameras.iter_mut() {
         if camera.attach_to == player_entity {
             if mount_car_requested && player_is_close_enough_to_ride(
                 player_transform.translation,
                 car_transform.translation,
             ) {
+                let pos_offset = match third_person_offset {
+                    Some(offset) => offset.0,
+                    None => CameraDistanceOffset::default(),
+                };
+
                 camera.attach_to = car_entity;
-                camera.camera_mode = CameraMode::ThirdPerson(CameraDistanceOffset::default());
+                camera.camera_mode = CameraMode::ThirdPerson(pos_offset);
 
                 rider.ride = Some(car_entity);
                 *collision_layers =
