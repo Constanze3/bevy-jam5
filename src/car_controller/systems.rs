@@ -1,6 +1,7 @@
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 
+use crate::lockpicking::Locked;
 use crate::player_car_swap::{Ridable, Rider};
 use crate::world_spawning::on_spawn::{Bicycle, Illegal, MapElement};
 
@@ -170,7 +171,7 @@ pub fn stick_bicycles(
     mut q_sticky: Query<(&mut Sticky, &CollidingEntities), Changed<CollidingEntities>>,
     q_car_controller: Query<Entity, With<CarController>>,
     q_child: Query<Option<&Parent>>,
-    q_is_bicycle: Query<Option<&Bicycle>>,
+    q_is_bicycle: Query<(Option<&Bicycle>, Option<&Locked>)>,
     q_bicycle: Query<
         (&GlobalTransform, &Children, Option<&Illegal>),
         (With<Bicycle>, Without<CarController>),
@@ -186,8 +187,8 @@ pub fn stick_bicycles(
             if let Some(parent) = parent {
                 let parent_entity = parent.get();
 
-                let bicycle = q_is_bicycle.get(parent_entity).unwrap();
-                if bicycle.is_some() {
+                let (bicycle, locked) = q_is_bicycle.get(parent_entity).unwrap();
+                if bicycle.is_some() && locked.is_none() {
                     let (gtransform, children, illegal) = q_bicycle.get(parent_entity).unwrap();
 
                     let mut sticked_bicycle_commands = commands.spawn((
