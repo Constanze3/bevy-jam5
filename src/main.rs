@@ -19,7 +19,7 @@ use bevy_outline_post_process::{components::OutlinePostProcessSettings, OutlineP
 fn main() {
     App::new()
         .insert_resource(MovementSettings::default())
-        .add_plugins((rules::rules_plugin, home::plugin))
+        .add_plugins((introduction::plugin, rules::plugin, pause_menu::plugin, home::plugin))
         .add_plugins((
             DefaultPlugins,
             PhysicsPlugins::default(),
@@ -49,10 +49,8 @@ fn main() {
         .init_state::<GameState>()
         .insert_resource(Msaa::Off)
         .init_state::<TestSkyboxState>()
-        .add_systems(
-            Update,
-            test_skybox.run_if(in_state(TestSkyboxState::Waiting)),
-        )
+        .add_systems(Update,
+            test_skybox.run_if(in_state(TestSkyboxState::Waiting)))
         .insert_resource(MovementSettings::default())
         .run();
 }

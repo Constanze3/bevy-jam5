@@ -4,7 +4,6 @@ use bevy::prelude::*;
 
 use crate::player_car_swap::Rider;
 
-use super::*;
 use interaction;
 
 pub struct CharacterControllerPlugin;

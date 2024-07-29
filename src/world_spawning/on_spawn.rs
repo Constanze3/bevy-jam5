@@ -8,7 +8,6 @@ mod player;
 
 pub use bicycle::*;
 pub use car::*;
-pub use home::*;
 pub use map::*;
 pub use player::*;
 

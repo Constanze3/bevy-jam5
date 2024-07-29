@@ -1,7 +1,7 @@
 use avian3d::math::*;
 use bevy::{
     ecs::prelude::*,
-    prelude::{Deref, DerefMut, KeyCode},
+    prelude::{Deref, DerefMut},
     reflect::Reflect,
 };
 

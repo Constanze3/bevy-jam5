@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 
+use crate::resources::MenuAction;
+use crate::pause_menu::PauseMenuUi;
+use crate::rules::RulesUi;
+
 #[derive(States, Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
 pub enum SimulationState {
     #[default]
@@ -38,21 +42,24 @@ fn setup_simulation(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
     grab_cursor(window);
 }
 
-fn on_simulation_paused(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
-    // TODO: It would be great to add some kind of text that says we're paused.
-    // Unfortunately, I've no idea how to implement some overlay/text in front of the camera at this time.
-    println!("Game paused.");
-
+fn on_simulation_paused(
+    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut pause_event_writer: EventWriter<MenuAction<PauseMenuUi>>,
+    mut rules_event_writer: EventWriter<MenuAction<RulesUi>>,
+) {
     let window = q_windows.single_mut();
     release_cursor(window);
+    pause_event_writer.send(MenuAction::Show);
+    rules_event_writer.send(MenuAction::Hide);
 }
 
-fn on_simulation_unpaused(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
-    // TODO: It would be great to remove said text that says we're paused.
-    println!("Game unpaused.");
-
+fn on_simulation_unpaused(
+    mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut pause_event_writer: EventWriter<MenuAction<PauseMenuUi>>,
+) {
     let window = q_windows.single_mut();
     grab_cursor(window);
+    pause_event_writer.send(MenuAction::Hide);
 }
 
 fn release_cursor(mut window: Mut<Window>) {
