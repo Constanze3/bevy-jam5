@@ -49,7 +49,7 @@ pub fn keyboard_input(
 }
 
 pub fn handle_events(
-    mut cameras: Query<&mut CameraControls>,
+    mut cameras: Query<(&mut CameraControls, Option<&CameraDistanceOffsetCache>)>,
     mut players: Query<(Entity, &mut Rider, &mut CollisionLayers, &mut RigidBody), With<Player>>,
     mut event_reader: EventReader<RideAction>,
     transforms: Query<&Transform>,
@@ -69,7 +69,7 @@ pub fn handle_events(
     };
 
     for event in event_reader.read() {
-        for mut camera in cameras.iter_mut() {
+        for (mut camera, third_person_offset) in cameras.iter_mut() {
             if camera.attach_to == player_entity {
                 match event {
                     RideAction::Mount(car_entity) => {
@@ -82,9 +82,14 @@ pub fn handle_events(
                             player_transform.translation,
                             car_transform.translation,
                         ) {
+                            let pos_offset = match third_person_offset {
+                                Some(offset) => offset.0,
+                                None => CameraDistanceOffset::default(),
+                            };
+
                             camera.attach_to = *car_entity;
                             camera.camera_mode =
-                                CameraMode::ThirdPerson(CameraDistanceOffset::default());
+                                CameraMode::ThirdPerson(pos_offset);
 
                             rider.ride = Some(*car_entity);
                             *collision_layers =
