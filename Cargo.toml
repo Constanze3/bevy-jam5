@@ -10,7 +10,7 @@ bevy_camera_extras = "0.10"
 rand = "0.8"
 bevy_asset_loader = "0.21.0"
 #player_controller = {path = "crates/player_controller"}
-bevy-inspector-egui = "0.25"
+#bevy-inspector-egui = "0.25"
 
 [dependencies.bevy_outline_post_process]
 git = "https://github.com/exvacuum/bevy_outline_post_process.git"

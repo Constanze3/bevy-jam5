@@ -13,7 +13,7 @@ use bevy::{
 };
 use bevy_camera_extras::*;
 
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_jam5::player_car_swap::*;
 use bevy_jam5::player_controller::*;
 use bevy_jam5::points::*;
@@ -34,7 +34,7 @@ fn main() {
                 meta_check: AssetMetaCheck::Never,
                 ..default()
             }),
-            WorldInspectorPlugin::default(),
+            // WorldInspectorPlugin::default(),
             PhysicsPlugins::default(),
             SimulationStatePlugin,
             CarControllerPlugin,
