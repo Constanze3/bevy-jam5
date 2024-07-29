@@ -79,6 +79,7 @@ fn setup(mut commands: Commands) {
                     align_items: AlignItems::Center,
                     ..default()
                 },
+                visibility: Visibility::Hidden,
                 ..default()
             },
         ))

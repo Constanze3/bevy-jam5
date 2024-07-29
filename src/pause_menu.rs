@@ -22,15 +22,23 @@ pub fn events_handler(
 
     for event in event_reader.read() {
         match event {
-            MenuAction::Hide => { *visibility = Visibility::Hidden; }
-            MenuAction::Show => { *visibility = Visibility::Visible; }
-            MenuAction::Toggle => { 
-                match visibility.clone() {
-                    Visibility::Visible => { *visibility = Visibility::Hidden; }
-                    Visibility::Hidden => { *visibility = Visibility::Visible; }
-                    _ => { *visibility = Visibility::Inherited; }
-                }
+            MenuAction::Hide => {
+                *visibility = Visibility::Hidden;
             }
+            MenuAction::Show => {
+                *visibility = Visibility::Visible;
+            }
+            MenuAction::Toggle => match visibility.clone() {
+                Visibility::Visible => {
+                    *visibility = Visibility::Hidden;
+                }
+                Visibility::Hidden => {
+                    *visibility = Visibility::Visible;
+                }
+                _ => {
+                    *visibility = Visibility::Inherited;
+                }
+            },
             _ => {}
         }
     }
@@ -50,6 +58,7 @@ fn setup(mut commands: Commands) {
                     align_items: AlignItems::Center,
                     ..default()
                 },
+                visibility: Visibility::Hidden,
                 ..default()
             },
         ))
@@ -86,7 +95,7 @@ fn setup(mut commands: Commands) {
                         ),
                         ..default()
                     });
-                    
+
                     parent.spawn(TextBundle {
                         style: Style {
                             align_self: AlignSelf::Center,
